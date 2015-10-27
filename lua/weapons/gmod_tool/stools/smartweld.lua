@@ -2,7 +2,7 @@
 Smart Weld
 Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
 Originally by Duncan Stead (Dunk)			- Dont contact for support
-Version = 2015710 (day/month/year)
+Version = October 25, 2015
 
 This Version: Totally recoded, first release of this version so expect some bugs.
 Added:
