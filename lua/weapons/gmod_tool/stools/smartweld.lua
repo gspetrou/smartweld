@@ -317,29 +317,28 @@ function TOOL:RightClick(tr)
 			end
 		end
 
-		if #self.selectedProps < 128 then	-- If they want to weld more than 127 props we have to chunk it
-			if weldToWorld == 1 then
-				for i = 1, #self.selectedProps do
-					local weld = constraint.Weld(self.selectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, false, false)
-					undo.AddEntity(weld)
-				end
-			elseif self:GetOwner():KeyDown(IN_USE) then
-				for i = 1, #self.selectedProps do
-					local weld = constraint.Weld(self.selectedProps[i].ent, tr.Entity, self.selectedProps[i].Bone, 0, weldForceLimit, nocollide, false)
-					undo.AddEntity(weld)
-				end
-			else
-				for i = 1, #self.selectedProps do	-- Normal Weld
-					for otherProps = 1, #self.selectedProps do
-						if i ~= otherProps and i ~= #self.selectedProps then
-							if not IsValid(self.selectedProps[i].ent) or not IsValid(self.selectedProps[otherProps].ent) then continue end
-							local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[otherProps].ent, self.selectedProps[i].bone, self.selectedProps[otherProps].bone, 0, nocollide, false)
-							undo.AddEntity(weld)
-						end
+		if weldToWorld == 1 then
+			for i = 1, #self.selectedProps do
+				local weld = constraint.Weld(self.selectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, false, false)
+				undo.AddEntity(weld)
+			end
+		elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
+			for i = 1, #self.selectedProps do
+				print(i)
+				local weld = constraint.Weld(self.selectedProps[i].ent, tr.Entity, self.selectedProps[i].bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
+				undo.AddEntity(weld)
+			end
+		elseif #self.selectedProps < 128 then 	-- They want to do a normal weld but if it's more than 127 props we have to chunk it
+			for i = 1, #self.selectedProps do	-- Normal Weld
+				for otherProps = 1, #self.selectedProps do
+					if i ~= otherProps and i ~= #self.selectedProps then
+						if not IsValid(self.selectedProps[i].ent) or not IsValid(self.selectedProps[otherProps].ent) then continue end
+						local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[otherProps].ent, self.selectedProps[i].bone, self.selectedProps[otherProps].bone, 0, nocollide, false)
+						undo.AddEntity(weld)
 					end
 				end
 			end
-		else
+		else 	-- A normal weld that is done in a different way since it is with more than 127 props
 			for i = 1, #self.selectedProps do
 				if i == #self.selectedProps then
 					break
