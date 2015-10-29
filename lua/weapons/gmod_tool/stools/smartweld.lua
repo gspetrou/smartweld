@@ -310,7 +310,6 @@ function TOOL:RightClick(tr)
 			end
 
 			if freezeProps == 1 then
-				print(type(freezeProps))
 				local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
 				propPhys:EnableMotion(false)
 				propPhys:Sleep()
