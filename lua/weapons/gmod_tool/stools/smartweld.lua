@@ -291,10 +291,12 @@ function TOOL:RightClick(tr)
 			end
 
 			if freezeProps == 1 then
-				local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
-				propPhys:EnableMotion(false)
-				propPhys:Sleep()
-				self:GetOwner():AddFrozenPhysicsObject(self.selectedProps[i].ent, propPhys)
+				if self.selectedProps[i].ent:IsValid() then
+					local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
+					propPhys:EnableMotion(false)
+					propPhys:Sleep()
+					self:GetOwner():AddFrozenPhysicsObject(self.selectedProps[i].ent, propPhys)
+				end
 			end
 		end
 
