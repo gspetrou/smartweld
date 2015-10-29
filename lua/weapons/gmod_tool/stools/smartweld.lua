@@ -307,7 +307,6 @@ function TOOL:RightClick(tr)
 			end
 		elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
 			for i = 1, #self.selectedProps do
-				print(i)
 				local weld = constraint.Weld(self.selectedProps[i].ent, tr.Entity, self.selectedProps[i].bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
@@ -336,11 +335,11 @@ function TOOL:RightClick(tr)
 		undo.Finish()
 	end
 
-	self:FinishWelding()
+	self:FinishWelding(tr.Entity)
 	return false
 end
 
-function TOOL:FinishWelding()
+function TOOL:FinishWelding(entity)
 	if CLIENT or game.SinglePlayer() then
 		local numProps = 0
 
@@ -352,7 +351,16 @@ function TOOL:FinishWelding()
 		end
 
 		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count
-			numProps = numProps + 1
+			local add = true
+			for i = 1, #self.selectedProps do
+				if self.selectedProps[i].ent == entity then
+					add = false
+					break
+				end
+			end
+			if add then
+				numProps = numProps + 1
+			end
 		end
 
 		self:Notify("Weld complete! "..numProps.." props welded.", NOTIFY_GENERIC)
