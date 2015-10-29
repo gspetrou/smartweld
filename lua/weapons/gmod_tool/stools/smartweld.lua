@@ -2,25 +2,6 @@
 Smart Weld
 Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
 Originally by Duncan Stead (Dunk)			- Dont contact for support
-Version = October 25, 2015
-
-This Version: Totally recoded, first release of this version so expect some bugs.
-Added:
-	Weld all to world
-	Auto-freeze for real - Does a physgun style freeze to every prop. Unfreeze all with R while holding one prop.
-	No-collide toggle - No-collides all selected props with each other.
-	Color Selection - Not too necessary but useful for grouping.
-	Weld all to one prop - Hold Use and right-click your target prop to weld everything selected to that one prop.
-
-Improved:
-	Overall it is much faster than the old version
-	Cleaner code and now Im not going to be messing with other people's code, just my own :)
-	
-Removed:
-	No-collide radius - It was useless, it no-collides all selected props now.
-	Max Welds Per Prop - It was useless, it welds every prop to every prop now.
-	Stability Weld - Read above.
-	Auto Unfreeze/Freeze - Useless because they just went away after the weld was done anyways.
 ]]
 
 TOOL.Category = "Constraints"
