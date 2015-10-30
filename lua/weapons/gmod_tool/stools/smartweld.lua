@@ -29,6 +29,9 @@ TOOL.allowedClasses = {
 	"prop_vehicle_crane",
 	"prop_vehicle_prisoner_pod"
 }
+-- Different mod compatability
+local compatability_scars = false	-- Can we weld to SCars from Sakarias88's car mods
+local compatability_wiremod = true	-- Adds support for wiremod
 
 -- Adds a slight delay between each individual weld. Useful for servers and high prop counts
 -- NOT DONE YET! DOES NOTHING IN THIS VERSION!
@@ -171,10 +174,8 @@ function TOOL:AutoSelect(ent)
 	local numNearProps = 0
 
 	for k, v in pairs(radiusProps) do
-		for i=1, #self.allowedClasses do
-			if v:GetClass() == self.allowedClasses[i] then
-				numNearProps = numNearProps + 1
-			end
+		if self:IsAllowedEnt(ent) then
+			numNearProps = numNearProps + 1
 		end
 
 		if #self.selectedProps == 0 or not self:PropHasBeenSelected(v) then
@@ -227,11 +228,10 @@ end
 function TOOL:SelectProp(entity)
 	if entity:IsPlayer() then return false end
 
-	for i=1, #self.allowedClasses do
-		if entity:GetClass() == self.allowedClasses[i] then
-			if #self.selectedProps == 0 then
-				self:SetStage(1)
-			end
+	if self:IsAllowedEnt(entity) then
+		if #self.selectedProps == 0 then
+			self:SetStage(1)
+		end
 
 			table.insert(self.selectedProps, {
 				ent = entity,
@@ -381,6 +381,32 @@ end
 function TOOL:PropHasBeenSelected(ent)
 	for i, v in ipairs(self.selectedProps) do
 		if ent == self.selectedProps[i].ent then
+			return true
+		end
+	end
+	return false
+end
+
+-- Decides if we can we want to weld that ent or not
+function TOOL:IsAllowedEnt(ent)
+	for i = 1, #self.allowedClasses do
+		if ent:GetClass() == self.allowedClasses[i] then
+			return true
+		end
+	end
+
+	if baseclass.Get(ent:GetClass()).Base == "base_gmodentity" then
+		return true
+	end
+
+	if compatability_scars then
+		if baseclass.Get(ent:GetClass()).Base == "sent_sakarias_scar_base" then
+			return true
+		end
+	end
+
+	if compatability_wiremod then
+		if baseclass.Get(ent:GetClass()).Base == "base_wire_entity" then
 			return true
 		end
 	end
