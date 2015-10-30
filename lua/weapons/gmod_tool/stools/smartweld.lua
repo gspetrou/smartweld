@@ -21,7 +21,13 @@ TOOL.ClientConVar["color_a"] = 255
 -- Add any classes for stuff you want to be smart weld-able
 TOOL.allowedClasses = {
 	"prop_physics",
-	"prop_ragdoll"
+	"prop_ragdoll",
+	"prop_vehicle",
+	"prop_vehicle_jeep",
+	"prop_vehicle_airboat",
+	"prop_vehicle_apc",
+	"prop_vehicle_crane",
+	"prop_vehicle_prisoner_pod"
 }
 
 -- Adds a slight delay between each individual weld. Useful for servers and high prop counts
