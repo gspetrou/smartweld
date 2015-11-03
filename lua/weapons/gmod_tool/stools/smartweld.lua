@@ -275,7 +275,7 @@ function TOOL:RightClick(tr)
 	end
 
 	if SERVER then
-		local weldForceLimit = tonumber(self:GetClientNumber("strength"))
+		local weldForceLimit = math.floor(self:GetClientNumber("strength"))
 		local weldToWorld = self:GetClientNumber("world")
 		local freezeProps = self:GetClientNumber("freeze")
 		local removeOldWelds = self:GetClientNumber("clearwelds")
@@ -308,7 +308,7 @@ function TOOL:RightClick(tr)
 
 		if weldToWorld == 1 then
 			for i = 1, #self.selectedProps do
-				local weld = constraint.Weld(self.selectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, false, false)
+				local weld = constraint.Weld(self.selectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
 		elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
@@ -321,7 +321,7 @@ function TOOL:RightClick(tr)
 				for otherProps = 1, #self.selectedProps do
 					if i ~= otherProps and i ~= #self.selectedProps then
 						if not IsValid(self.selectedProps[i].ent) or not IsValid(self.selectedProps[otherProps].ent) then continue end
-						local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[otherProps].ent, self.selectedProps[i].bone, self.selectedProps[otherProps].bone, 0, nocollide, false)
+						local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[otherProps].ent, self.selectedProps[i].bone, self.selectedProps[otherProps].bone, weldForceLimit, nocollide, false)
 						undo.AddEntity(weld)
 					end
 				end
@@ -332,7 +332,7 @@ function TOOL:RightClick(tr)
 					break
 				end
 
-				local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[i+1].ent, self.selectedProps[i].bone, self.selectedProps[i+1].bone, 0, nocollide, false)
+				local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[i+1].ent, self.selectedProps[i].bone, self.selectedProps[i+1].bone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
 		end
