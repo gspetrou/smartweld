@@ -19,6 +19,7 @@ TOOL.ClientConVar["color_b"] = 0
 TOOL.ClientConVar["color_a"] = 255
 
 -- Add any classes for stuff you want to be smart weld-able
+-- Goto the IsAllowedEnt function for more info
 TOOL.allowedClasses = {
 	"prop_physics",
 	"prop_ragdoll",
@@ -37,6 +38,7 @@ local compatability_wiremod = true	-- Adds support for wiremod
 -- NOT DONE YET! DOES NOTHING IN THIS VERSION!
 local slowweld = false
 local slowweld_delay = 1 -- The higher the number the less lag but will make the weld take longer and longer
+
 
 if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
@@ -233,17 +235,16 @@ function TOOL:SelectProp(entity)
 			self:SetStage(1)
 		end
 
-			table.insert(self.selectedProps, {
-				ent = entity,
-				col = entity:GetColor(),
-				bone = 0
-			})
+		table.insert(self.selectedProps, {
+			ent = entity,
+			col = entity:GetColor(),
+			bone = 0
+		})
 
-			if CLIENT or game.SinglePlayer() then
-				entity:SetColor(Color(self:GetClientNumber("color_r", 0), self:GetClientNumber("color_g", 0), self:GetClientNumber("color_b", 0), self:GetClientNumber("color_a", 255)))
-			end
-			return true
+		if CLIENT or game.SinglePlayer() then
+			entity:SetColor(Color(self:GetClientNumber("color_r", 0), self:GetClientNumber("color_g", 0), self:GetClientNumber("color_b", 0), self:GetClientNumber("color_a", 255)))
 		end
+		return true
 	end
 	return false
 end
