@@ -140,7 +140,6 @@ function TOOL:Holster()
 				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
 			end
 		end
-
 	end
 	self.selectedProps = nil
 	self:SetStage(1)
@@ -168,24 +167,24 @@ end
 -- Auto-selects props
 function TOOL:AutoSelect(ent)
 	if not ent:IsValid() then return false end
-	local outterSelectedProps = self:GetClientNumber("selectradius")
+	local preAutoSelect = #self.selectedProps
 
-	local radiusProps = ents.FindInSphere(ent:GetPos(), outterSelectedProps)
+	local selectRadius = self:GetClientNumber("selectradius")
+	local radiusProps = ents.FindInSphere(ent:GetPos(), selectRadius)
 	if #radiusProps < 1 then return false end
 
 	local numNearProps = 0
 
-	for k, v in pairs(radiusProps) do
-		if self:IsAllowedEnt(ent) then
-			numNearProps = numNearProps + 1
-		end
+	for i = 1, #radiusProps do
+		if self:IsAllowedEnt(ent) and not self:PropHasBeenSelected(radiusProps[i]) then
+			self:SelectProp(radiusProps[i])
 
-		if #self.selectedProps == 0 or not self:PropHasBeenSelected(v) then
-			self:SelectProp(v)
+			numNearProps = numNearProps + 1
+			print(radiusProps[i])
 		end
 	end
 
-	self:Notify(numNearProps.." prop(s) have been auto-selected.", NOTIFY_GENERIC)
+	self:Notify((#self.selectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
 end
 
 -- Decides if we should select it or deselect it
@@ -208,7 +207,7 @@ function TOOL:HandleProp(tr)
 	return true
 end
 
--- Deselectes the chosen prop(s)
+-- Deselectes the chosen prop
 function TOOL:DeselectProp(ent, propTblPos)
 	if SERVER then
 		for k, v in pairs(self.selectedProps) do
@@ -226,10 +225,8 @@ function TOOL:DeselectProp(ent, propTblPos)
 	return true
 end
 
--- Does some tests then selects the prop. Adds to props table, objects table, and sets color
+-- Adds prop to props table and sets its color
 function TOOL:SelectProp(entity)
-	if entity:IsPlayer() then return false end
-
 	if self:IsAllowedEnt(entity) then
 		if #self.selectedProps == 0 then
 			self:SetStage(1)
@@ -380,6 +377,14 @@ end
 
 -- Checks if a prop has already been selected
 function TOOL:PropHasBeenSelected(ent)
+	if not self.selectedProps then
+		return true -- Something is wrong, selectedProps should've been defined already!
+	end
+
+	if #self.selectedProps == 0 then
+		return false
+	end
+
 	for i, v in ipairs(self.selectedProps) do
 		if ent == self.selectedProps[i].ent then
 			return true
@@ -390,6 +395,9 @@ end
 
 -- Decides if we can we want to weld that ent or not
 function TOOL:IsAllowedEnt(ent)
+	if not ent:IsValid() then return false end
+	if ent:IsPlayer() then return false end
+
 	for i = 1, #self.allowedClasses do
 		if ent:GetClass() == self.allowedClasses[i] then
 			return true
