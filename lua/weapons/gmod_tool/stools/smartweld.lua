@@ -1,7 +1,7 @@
 --[[
 Smart Weld
 Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
-Originally by Duncan Stead (Dunk)			- Dont contact for support
+Originally by Duncan Stead (Dunk)				- Dont contact for support
 ]]
 
 TOOL.Category = "Constraints"
@@ -180,7 +180,6 @@ function TOOL:AutoSelect(ent)
 			self:SelectProp(radiusProps[i])
 
 			numNearProps = numNearProps + 1
-			print(radiusProps[i])
 		end
 	end
 
@@ -196,7 +195,7 @@ function TOOL:HandleProp(tr)
 	else
 		for i = 1,  #self.selectedProps do
 			if self.selectedProps[i].ent == tr.Entity then
-				self:DeselectProp(tr.Entity, i)
+				self:DeselectProp(tr.Entity)
 
 				return true
 			end
@@ -208,18 +207,14 @@ function TOOL:HandleProp(tr)
 end
 
 -- Deselectes the chosen prop
-function TOOL:DeselectProp(ent, propTblPos)
-	if SERVER then
-		for k, v in pairs(self.selectedProps) do
-			if self.selectedProps[k].ent == ent then
-				table.remove(self.selectedProps, k)
+function TOOL:DeselectProp(ent)
+	for k, v in pairs(self.selectedProps) do
+		if self.selectedProps[k].ent == ent then
+			if CLIENT or game.SinglePlayer() then
+				ent:SetColor(self.selectedProps[k].col)
 			end
+			table.remove(self.selectedProps, k)
 		end
-	end
-
-	if CLIENT or game.SinglePlayer() then
-		ent:SetColor(self.selectedProps[propTblPos].col)
-		table.remove(self.selectedProps, propTblPos)
 	end
 
 	return true
@@ -255,7 +250,6 @@ function TOOL:Reload()
 			for i = 1, #self.selectedProps do
 				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
 			end
-			self:Notify(#self.selectedProps.." prop(s) have been deselected.", NOTIFY_CLEANUP)
 		end
 		
 		self.selectedProps = nil
@@ -365,10 +359,15 @@ function TOOL:FinishWelding(entity)
 			if add then
 				numProps = numProps + 1
 			end
+			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
+			print("You succesfully welded ".. numProps.." props to a single prop.")
+		elseif tobool(self:GetClientNumber("world")) then
+			self:Notify("Weld complete! "..numProps.." props have been welded to the world.", NOTIFY_GENERIC)
+			print("You succesfully welded ".. numProps.." props to the world.")
+		else
+			self:Notify("Weld complete! "..numProps.." props have been welded to each other.", NOTIFY_GENERIC)
+			print("You succesfully welded ".. numProps.." props to each other.")
 		end
-
-		self:Notify("Weld complete! "..numProps.." props welded.", NOTIFY_GENERIC)
-		print("You succesfully welded ".. numProps.." props.")
 	end
 	if SERVER then print(self:GetOwner():Nick().." ("..self:GetOwner():SteamID()..") succesfully welded "..#self.selectedProps.." props.") end
 	self.selectedProps = nil
@@ -431,6 +430,7 @@ function TOOL:Notify(text, notifyType)
 		if not IsValid(self.Owner) or self.Owner ~= LocalPlayer() then return end
 		if IsFirstTimePredicted() then
 			notification.AddLegacy(text, notifyType, 5)
+			surface.PlaySound("buttons/button15.wav")
 		end
 	end
 end
