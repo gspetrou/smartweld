@@ -36,7 +36,6 @@ TOOL.allowedClasses = {
 	"prop_vehicle_prisoner_pod"
 }
 -- Different mod compatability
-local compatability_scars = false	-- Can we weld to SCars from Sakarias88's car mods
 -- Check the IsAllowedEnt function to see how to add more support
 -- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
 local compatability_scars = true	-- Can we weld to SCars from Sakarias88's car mods
@@ -261,6 +260,7 @@ function TOOL:Reload()
 		end
 		
 		self.selectedProps = nil
+		self:Notify("Prop Selection Cleared", NOTIFY_CLEANUP)
 	end
 end
 
@@ -404,6 +404,39 @@ end
 function TOOL:IsAllowedEnt(ent)
 	if not ent:IsValid() then return false end
 	if ent:IsPlayer() then return false end
+	if SERVER and ent:CreatedByMap() then return false end
+	if ent:IsWeapon() then
+		local ply = SERVER and self:GetOwner() or self.Owner
+
+		if ply:HasWeapon(ent:GetClass()) then
+			return false
+		end
+	end
+
+	local entBlacklist = {	-- You shouldn't want to remove these, you can add to it if you want though.
+		"soundent",
+		"player_manager",
+		"gmod_gamerules",
+		"bodyque",
+		"ai_network",
+		"predicted_viewmodel",
+		"gmod_hands",
+		"scene_manager",
+		"viewmodel",
+		"network"
+	}
+
+	for i = 1, #entBlacklist do
+		if ent:GetClass() == entBlacklist[i] then
+			return false
+		end
+	end
+
+	if IsValid(ent:GetParent()) then
+		self:IsAllowedEnt(ent:GetParent()) -- Only weld the parent ent
+		return false
+	end
+
 	if self.AllowAllEntities then
 		if isentity(ent) then
 			return true
