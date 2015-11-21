@@ -18,8 +18,13 @@ TOOL.ClientConVar["color_g"] = 255
 TOOL.ClientConVar["color_b"] = 0
 TOOL.ClientConVar["color_a"] = 255
 
+-- Allows welding of any ent except world ents and ents found in the blacklist in the IsAllowedEnt function
+-- Disable to specify what you want to allow bellow!
+TOOL.AllowAllEntities = true
+
 -- Add any classes for stuff you want to be smart weld-able
 -- Goto the IsAllowedEnt function for more info
+-- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
 TOOL.allowedClasses = {
 	"prop_physics",
 	"prop_ragdoll",
@@ -32,6 +37,9 @@ TOOL.allowedClasses = {
 }
 -- Different mod compatability
 local compatability_scars = false	-- Can we weld to SCars from Sakarias88's car mods
+-- Check the IsAllowedEnt function to see how to add more support
+-- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
+local compatability_scars = true	-- Can we weld to SCars from Sakarias88's car mods
 local compatability_wiremod = true	-- Adds support for wiremod
 
 -- Adds a slight delay between each individual weld. Useful for servers and high prop counts
@@ -396,6 +404,11 @@ end
 function TOOL:IsAllowedEnt(ent)
 	if not ent:IsValid() then return false end
 	if ent:IsPlayer() then return false end
+	if self.AllowAllEntities then
+		if isentity(ent) then
+			return true
+		end
+	end
 
 	for i = 1, #self.allowedClasses do
 		if ent:GetClass() == self.allowedClasses[i] then
