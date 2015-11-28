@@ -198,7 +198,7 @@ function TOOL:HandleProp(tr)
 	if not tr.Entity:IsValid() then return false end
 
 	if #self.selectedProps == 0 then
-		self:SelectProp(tr.Entity)
+		self:SelectProp(tr.Entity, tr.PhysicsBone)
 	else
 		for i = 1,  #self.selectedProps do
 			if self.selectedProps[i].ent == tr.Entity then
@@ -207,7 +207,7 @@ function TOOL:HandleProp(tr)
 				return true
 			end
 		end
-		self:SelectProp(tr.Entity)
+		self:SelectProp(tr.Entity, tr.PhysicsBone)
 	end
 
 	return true
@@ -228,16 +228,18 @@ function TOOL:DeselectProp(ent)
 end
 
 -- Adds prop to props table and sets its color
-function TOOL:SelectProp(entity)
+function TOOL:SelectProp(entity, hitBoneNum)
 	if self:IsAllowedEnt(entity) then
 		if #self.selectedProps == 0 then
 			self:SetStage(1)
 		end
 
+		local boneNum = entity:IsRagdoll() and hitBoneNum or 0
+
 		table.insert(self.selectedProps, {
 			ent = entity,
 			col = entity:GetColor(),
-			bone = 0
+			bone = boneNum
 		})
 
 		if CLIENT or game.SinglePlayer() then
