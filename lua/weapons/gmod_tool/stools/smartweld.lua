@@ -18,35 +18,6 @@ TOOL.ClientConVar["color_g"] = 255
 TOOL.ClientConVar["color_b"] = 0
 TOOL.ClientConVar["color_a"] = 255
 
--- Allows welding of any ent except world ents and ents found in the blacklist in the IsAllowedEnt function
--- Disable to specify what you want to allow bellow!
-TOOL.AllowAllEntities = true
-
--- Add any classes for stuff you want to be smart weld-able
--- Goto the IsAllowedEnt function for more info
--- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
-TOOL.allowedClasses = {
-	"prop_physics",
-	"prop_ragdoll",
-	"prop_vehicle",
-	"prop_vehicle_jeep",
-	"prop_vehicle_airboat",
-	"prop_vehicle_apc",
-	"prop_vehicle_crane",
-	"prop_vehicle_prisoner_pod"
-}
--- Different mod compatability
--- Check the IsAllowedEnt function to see how to add more support
--- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
-local compatability_scars = true	-- Can we weld to SCars from Sakarias88's car mods
-local compatability_wiremod = true	-- Adds support for wiremod
-
--- Adds a slight delay between each individual weld. Useful for servers and high prop counts
--- NOT DONE YET! DOES NOTHING IN THIS VERSION!
-local slowweld = false
-local slowweld_delay = 1 -- The higher the number the less lag but will make the weld take longer and longer
-
-
 if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
 	language.Add("tool.smartweld.desc", "Automatically welds selected props")
@@ -370,16 +341,12 @@ function TOOL:FinishWelding(entity)
 				numProps = numProps + 1
 			end
 			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to a single prop.")
 		elseif tobool(self:GetClientNumber("world")) then
 			self:Notify("Weld complete! "..numProps.." props have been welded to the world.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to the world.")
 		else
 			self:Notify("Weld complete! "..numProps.." props have been welded to each other.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to each other.")
 		end
 	end
-	if SERVER then print(self:GetOwner():Nick().." ("..self:GetOwner():SteamID()..") succesfully welded "..#self.selectedProps.." props.") end
 	self.selectedProps = nil
 	self:SetStage(1)
 end
@@ -402,70 +369,14 @@ function TOOL:PropHasBeenSelected(ent)
 	return false
 end
 
--- Decides if we can we want to weld that ent or not
+-- Decides if we can we want to weld that ent or not, hard coding a blacklist would be disgusting and unreliable, so lets do a small work around and let our prop proection handle it.
 function TOOL:IsAllowedEnt(ent)
-	if not ent:IsValid() then return false end
-	if ent:IsPlayer() then return false end
-	if SERVER and ent:CreatedByMap() then return false end
-	if ent:IsWeapon() then
-		local ply = SERVER and self:GetOwner() or self.Owner
-
-		if ply:HasWeapon(ent:GetClass()) then
-			return false
-		end
-	end
-
-	local entBlacklist = {	-- You shouldn't want to remove these, you can add to it if you want though.
-		"soundent",
-		"player_manager",
-		"gmod_gamerules",
-		"bodyque",
-		"ai_network",
-		"predicted_viewmodel",
-		"gmod_hands",
-		"scene_manager",
-		"viewmodel",
-		"network"
-	}
-
-	for i = 1, #entBlacklist do
-		if ent:GetClass() == entBlacklist[i] then
-			return false
-		end
-	end
-
-	if IsValid(ent:GetParent()) then
-		self:IsAllowedEnt(ent:GetParent()) -- Only weld the parent ent
-		return false
-	end
-
-	if self.AllowAllEntities then
-		if isentity(ent) then
-			return true
-		end
-	end
-
-	for i = 1, #self.allowedClasses do
-		if ent:GetClass() == self.allowedClasses[i] then
-			return true
-		end
-	end
-
-	if baseclass.Get(ent:GetClass()).Base == "base_gmodentity" then
-		return true
-	end
-
-	if compatability_scars then
-		if baseclass.Get(ent:GetClass()).Base == "sent_sakarias_scar_base" then
-			return true
-		end
-	end
-
-	if compatability_wiremod then
-		if baseclass.Get(ent:GetClass()).Base == "base_wire_entity" then
-			return true
-		end
-	end
+	if IsValid(ent) then
+		local pl = self:GetOwner()
+		local tr = pl:GetEyeTrace()
+		tr.entity = ent
+		return hook.Run('CanTool', pl, tr, 'smartweld')
+	end 
 	return false
 end
 
