@@ -379,7 +379,7 @@ function TOOL:PropHasBeenSelected(ent)
 	end
 
 	for k, v in pairs(self.selectedProps) do
-		if ent == self.selectedProps[i].ent then
+		if ent == self.selectedProps[k].ent then
 			return true
 		end
 	end
