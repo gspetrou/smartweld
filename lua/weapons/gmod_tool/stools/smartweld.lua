@@ -18,13 +18,7 @@ TOOL.ClientConVar["color_g"] = 255
 TOOL.ClientConVar["color_b"] = 0
 TOOL.ClientConVar["color_a"] = 255
 
--- Allows welding of any ent except world ents and ents found in the blacklist in the IsAllowedEnt function
--- Disable to specify what you want to allow bellow!
-TOOL.AllowAllEntities = true
-
--- Add any classes for stuff you want to be smart weld-able
--- Goto the IsAllowedEnt function for more info
--- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
+TOOL.AllowAllEntities = true -- For the bellow config to work this must be false
 TOOL.allowedClasses = {
 	"prop_physics",
 	"prop_ragdoll",
@@ -35,17 +29,11 @@ TOOL.allowedClasses = {
 	"prop_vehicle_crane",
 	"prop_vehicle_prisoner_pod"
 }
--- Different mod compatability
--- Check the IsAllowedEnt function to see how to add more support
--- AllowAllEntities MUST BE FALSE FOR THIS TO WORK!
-local compatability_scars = true	-- Can we weld to SCars from Sakarias88's car mods
-local compatability_wiremod = true	-- Adds support for wiremod
-
--- Adds a slight delay between each individual weld. Useful for servers and high prop counts
--- NOT DONE YET! DOES NOTHING IN THIS VERSION!
-local slowweld = false
-local slowweld_delay = 1 -- The higher the number the less lag but will make the weld take longer and longer
-
+local compatability_scars = true
+local compatability_wiremod = true
+/////////////////////
+////End of Config////
+/////////////////////
 
 if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
@@ -370,13 +358,10 @@ function TOOL:FinishWelding(entity)
 				numProps = numProps + 1
 			end
 			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to a single prop.")
 		elseif tobool(self:GetClientNumber("world")) then
 			self:Notify("Weld complete! "..numProps.." props have been welded to the world.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to the world.")
 		else
 			self:Notify("Weld complete! "..numProps.." props have been welded to each other.", NOTIFY_GENERIC)
-			print("You succesfully welded ".. numProps.." props to each other.")
 		end
 	end
 	if SERVER then print(self:GetOwner():Nick().." ("..self:GetOwner():SteamID()..") succesfully welded "..#self.selectedProps.." props.") end
