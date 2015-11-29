@@ -4,20 +4,6 @@ Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
 Originally by Duncan Stead (Dunk)				- Dont contact for support
 ]]
 
-TOOL.Category = "Constraints"
-TOOL.Name = "Weld - Smart"
-TOOL.ClientConVar["selectradius"] = 128
-TOOL.ClientConVar["selectinsideradius"] = 0
-TOOL.ClientConVar["nocollide"] = 1
-TOOL.ClientConVar["freeze"] = 0
-TOOL.ClientConVar["clearwelds"] = 1
-TOOL.ClientConVar["strength"] = 0
-TOOL.ClientConVar["world"] = 0
-TOOL.ClientConVar["color_r"] = 0
-TOOL.ClientConVar["color_g"] = 255
-TOOL.ClientConVar["color_b"] = 0
-TOOL.ClientConVar["color_a"] = 255
-
 TOOL.AllowAllEntities = true -- For the bellow config to work this must be false
 TOOL.allowedClasses = {
 	"prop_physics",
@@ -34,6 +20,21 @@ local compatability_wiremod = true
 /////////////////////
 ////End of Config////
 /////////////////////
+
+
+TOOL.Category = "Constraints"
+TOOL.Name = "Weld - Smart"
+TOOL.ClientConVar["selectradius"] = 128
+TOOL.ClientConVar["selectinsideradius"] = 0
+TOOL.ClientConVar["nocollide"] = 1
+TOOL.ClientConVar["freeze"] = 0
+TOOL.ClientConVar["clearwelds"] = 1
+TOOL.ClientConVar["strength"] = 0
+TOOL.ClientConVar["world"] = 0
+TOOL.ClientConVar["color_r"] = 0
+TOOL.ClientConVar["color_g"] = 255
+TOOL.ClientConVar["color_b"] = 0
+TOOL.ClientConVar["color_a"] = 255
 
 if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
@@ -127,7 +128,7 @@ end
 function TOOL:Deploy()
 end
 
---Clear stuff when you die or holster
+--Clear selected props when you die or holster the tool
 function TOOL:Holster()
 	if (CLIENT or game.SinglePlayer()) and self.selectedProps and #self.selectedProps ~= 0 then
 		for i = 1, #self.selectedProps do
@@ -181,7 +182,7 @@ function TOOL:AutoSelect(ent)
 	self:Notify((#self.selectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
 end
 
--- Decides if we should select it or deselect it
+-- Decides if we should select it or deselect the specified entity
 function TOOL:HandleProp(tr)
 	if not tr.Entity:IsValid() then return false end
 
@@ -273,9 +274,10 @@ function TOOL:RightClick(tr)
 
 		undo.Create("smartweld")
 
-		-- Refresh welds has to be in its own loop otherwise it will delete the new welds as it goes
-		-- Will freeze all the props if that option is enabled
-		for i = 1, #self.selectedProps do	
+		
+		-- Any code in this loop runs before the actual welding, like removing old welds or freezing the props.
+		for i = 1, #self.selectedProps do
+			-- Refresh welds, it removed pre-existing welds on the selected entities before making the smartweld.
 			if removeOldWelds == 1 then
 				local propsconstraints = constraint.FindConstraints(self.selectedProps[i].ent, "Weld")
 
@@ -286,6 +288,7 @@ function TOOL:RightClick(tr)
 				end
 			end
 
+			-- Will freeze all the props if that option is enabled
 			if freezeProps == 1 then
 				if self.selectedProps[i].ent:IsValid() then
 					local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
@@ -347,15 +350,11 @@ function TOOL:FinishWelding(entity)
 		end
 
 		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count
-			local add = true
 			for i = 1, #self.selectedProps do
 				if self.selectedProps[i].ent == entity then
-					add = false
+					numProps = numProps + 1
 					break
 				end
-			end
-			if add then
-				numProps = numProps + 1
 			end
 			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
 		elseif tobool(self:GetClientNumber("world")) then
@@ -379,7 +378,7 @@ function TOOL:PropHasBeenSelected(ent)
 		return false
 	end
 
-	for i, v in ipairs(self.selectedProps) do
+	for k, v in pairs(self.selectedProps) do
 		if ent == self.selectedProps[i].ent then
 			return true
 		end
@@ -422,15 +421,15 @@ function TOOL:IsAllowedEnt(ent)
 		end
 	end
 
-	if IsValid(ent:GetParent()) then
-		self:IsAllowedEnt(ent:GetParent()) -- Only weld the parent ent
-		return false
-	end
-
 	if ent:IsWeapon() then -- If they have the weapon in their inventory then don't weld it
 		if ply:HasWeapon(ent:GetClass()) then
 			return false
 		end
+	end
+
+	if IsValid(ent:GetParent()) then
+		self:IsAllowedEnt(ent:GetParent()) -- Only weld the parent ent
+		return false
 	end
 
 	if self.AllowAllEntities then
