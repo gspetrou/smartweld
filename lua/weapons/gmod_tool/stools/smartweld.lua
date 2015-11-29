@@ -390,15 +390,18 @@ end
 -- Decides if we can we want to weld that ent or not
 function TOOL:IsAllowedEnt(ent)
 	if not ent:IsValid() then return false end
+	
+	local ply = SERVER and self:GetOwner() or self.Owner
+	local tr = ply:GetEyeTrace()
+	tr.entity = ent
+
+	-- For checking prop ownership, thanks aStonedPenguin
+	if not hook.Run("CanTool", ply, tr, "smartweld") then
+		return false
+	end
+
 	if ent:IsPlayer() then return false end
 	if SERVER and ent:CreatedByMap() then return false end
-	if ent:IsWeapon() then
-		local ply = SERVER and self:GetOwner() or self.Owner
-
-		if ply:HasWeapon(ent:GetClass()) then
-			return false
-		end
-	end
 
 	local entBlacklist = {	-- You shouldn't want to remove these, you can add to it if you want though.
 		"soundent",
@@ -424,12 +427,19 @@ function TOOL:IsAllowedEnt(ent)
 		return false
 	end
 
+	if ent:IsWeapon() then -- If they have the weapon in their inventory then don't weld it
+		if ply:HasWeapon(ent:GetClass()) then
+			return false
+		end
+	end
+
 	if self.AllowAllEntities then
 		if isentity(ent) then
 			return true
 		end
 	end
 
+	-- Nothing bellow here should be ran if self.AllowAllEntities is true
 	for i = 1, #self.allowedClasses do
 		if ent:GetClass() == self.allowedClasses[i] then
 			return true
@@ -440,17 +450,18 @@ function TOOL:IsAllowedEnt(ent)
 		return true
 	end
 
-	if compatability_scars then
-		if baseclass.Get(ent:GetClass()).Base == "sent_sakarias_scar_base" then
-			return true
-		end
-	end
-
 	if compatability_wiremod then
 		if baseclass.Get(ent:GetClass()).Base == "base_wire_entity" then
 			return true
 		end
 	end
+
+	if compatability_scars then
+		if baseclass.Get(ent:GetClass()).Base == "sent_sakarias_scar_base" then
+			return true
+		end
+	end
+	
 	return false
 end
 
