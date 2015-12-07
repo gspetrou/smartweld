@@ -349,7 +349,6 @@ function TOOL:FinishWelding(entity)
 			self:Notify('Weld complete! '..numProps..' props have been welded to each other.', NOTIFY_GENERIC)
 		end
 	end
-	if SERVER then print(self:GetOwner():Nick()..' ('..self:GetOwner():SteamID()..') succesfully welded '..#self.selectedProps..' props.') end
 	self.selectedProps = nil
 	self:SetStage(1)
 end
