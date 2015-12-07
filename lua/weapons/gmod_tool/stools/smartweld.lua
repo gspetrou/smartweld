@@ -356,20 +356,11 @@ end
 
 -- Checks if a prop has already been selected
 function TOOL:PropHasBeenSelected(ent)
-	if not self.selectedProps then
-		return true -- Something is wrong, selectedProps should've been defined already!
-	end
-
-	if #self.selectedProps == 0 then
-		return false
-	end
-
 	for k, v in ipairs(self.selectedProps) do
 		if (ent == v.ent) then
 			return true
 		end
 	end
-
 	return false
 end
 
