@@ -9,6 +9,8 @@ TOOL.AllowedClasses = {
 	prop_vehicle_prisoner_pod	= true
 }
 
+TOOL.SelectedProps = {}
+
 TOOL.Category 						= 'Constraints'
 TOOL.Name 							= 'Weld - Smart'
 TOOL.ClientConVar['selectradius'] 	= 128
@@ -21,7 +23,6 @@ TOOL.ClientConVar['color_r'] 		= 0
 TOOL.ClientConVar['color_g'] 		= 255
 TOOL.ClientConVar['color_b'] 		= 0
 TOOL.ClientConVar['color_a'] 		= 255
-TOOL.selectedProps = {}
 
 if CLIENT then
 	language.Add('tool.smartweld.name', 'Weld - Smart')
@@ -118,13 +119,13 @@ end
 --Clear selected props when you die or holster the tool
 function TOOL:Holster()
 	if CLIENT then
-		for i = 1, #self.selectedProps do
-			if IsValid(self.selectedProps[i].ent) then
-				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
+		for i = 1, #self.SelectedProps do
+			if IsValid(self.SelectedProps[i].ent) then
+				self.SelectedProps[i].ent:SetColor(self.SelectedProps[i].col)
 			end
 		end
 	end
-	self.selectedProps = {}
+	self.SelectedProps = {}
 	self:SetStage(1)
 end
 
@@ -147,7 +148,7 @@ end
 -- Auto-selects props
 function TOOL:AutoSelect(ent)
 	if not IsValid(ent) then return false end
-	local preAutoSelect = #self.selectedProps
+	local preAutoSelect = #self.SelectedProps
 
 	local selectRadius = self:GetClientNumber('selectradius')
 	local radiusProps = ents.FindInSphere(ent:GetPos(), selectRadius)
@@ -163,16 +164,16 @@ function TOOL:AutoSelect(ent)
 		end
 	end
 
-	self:Notify((#self.selectedProps-preAutoSelect)..' prop(s) have been auto-selected.', NOTIFY_GENERIC)
+	self:Notify((#self.SelectedProps-preAutoSelect)..' prop(s) have been auto-selected.', NOTIFY_GENERIC)
 end
 
 -- Decides if we should select it or deselect the specified entity
 function TOOL:HandleProp(tr)
-	if #self.selectedProps == 0 then
+	if #self.SelectedProps == 0 then
 		self:SelectProp(tr.Entity, tr.PhysicsBone)
 	else
-		for i = 1,  #self.selectedProps do
-			if self.selectedProps[i].ent == tr.Entity then
+		for i = 1,  #self.SelectedProps do
+			if self.SelectedProps[i].ent == tr.Entity then
 				self:DeselectProp(tr.Entity)
 
 				return true
@@ -186,12 +187,12 @@ end
 
 -- Deselectes the chosen prop
 function TOOL:DeselectProp(ent)
-	for k, v in pairs(self.selectedProps) do
-		if self.selectedProps[k].ent == ent then
+	for i = 1, #self.SelectedProps do
+		if self.SelectedProps[i].ent == ent then
 			if CLIENT then
-				ent:SetColor(self.selectedProps[k].col)
+				ent:SetColor(self.SelectedProps[i].col)
 			end
-			table.remove(self.selectedProps, k)
+			table.remove(self.SelectedProps, i)
 		end
 	end
 
@@ -201,13 +202,13 @@ end
 -- Adds prop to props table and sets its color
 function TOOL:SelectProp(entity, hitBoneNum)
 	if self:IsAllowedEnt(entity) then
-		if #self.selectedProps == 0 then
+		if #self.SelectedProps == 0 then
 			self:SetStage(1)
 		end
 
 		local boneNum = entity:IsRagdoll() and hitBoneNum or 0
 
-		table.insert(self.selectedProps, {
+		table.insert(self.SelectedProps, {
 			ent = entity,
 			col = entity:GetColor(),
 			bone = boneNum
@@ -223,24 +224,24 @@ end
 
 -- Pretty much deselects all
 function TOOL:Reload()
-	if IsFirstTimePredicted() and self.selectedProps then
+	if IsFirstTimePredicted() and self.SelectedProps then
 		self:SetStage(1)
 
 		if CLIENT then
-			for i = 1, #self.selectedProps do
-				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
+			for i = 1, #self.SelectedProps do
+				self.SelectedProps[i].ent:SetColor(self.SelectedProps[i].col)
 			end
 		end
 		
-		self.selectedProps = {}
+		self.SelectedProps = {}
 		self:Notify('Prop Selection Cleared', NOTIFY_CLEANUP)
 	end
 end
 
 -- Handles the welding
 function TOOL:RightClick(tr)
-	if #self.selectedProps <= 1 then
-		self:Notify((#self.selectedProps == 1 and 'Select at least one more prop to weld.' or 'No props selected!'), NOTIFY_GENERIC)
+	if #self.SelectedProps <= 1 then
+		self:Notify((#self.SelectedProps == 1 and 'Select at least one more prop to weld.' or 'No props selected!'), NOTIFY_GENERIC)
 		return false
 	end
 
@@ -255,10 +256,10 @@ function TOOL:RightClick(tr)
 
 		
 		-- Any code in this loop runs before the actual welding, like removing old welds or freezing the props.
-		for i = 1, #self.selectedProps do
+		for i = 1, #self.SelectedProps do
 			-- Refresh welds, it removed pre-existing welds on the selected entities before making the smartweld.
 			if removeOldWelds == 1 then
-				local propsconstraints = constraint.FindConstraints(self.selectedProps[i].ent, 'Weld')
+				local propsconstraints = constraint.FindConstraints(self.SelectedProps[i].ent, 'Weld')
 
 				if propsconstraints then
 					for i = 1, #propsconstraints do
@@ -269,42 +270,42 @@ function TOOL:RightClick(tr)
 
 			-- Will freeze all the props if that option is enabled
 			if freezeProps == 1 then
-				if self.selectedProps[i].IsValid(ent) then
-					local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
+				if self.SelectedProps[i].IsValid(ent) then
+					local propPhys = self.SelectedProps[i].ent:GetPhysicsObject()
 					propPhys:EnableMotion(false)
 					propPhys:Sleep()
-					self:GetOwner():AddFrozenPhysicsObject(self.selectedProps[i].ent, propPhys)
+					self:GetOwner():AddFrozenPhysicsObject(self.SelectedProps[i].ent, propPhys)
 				end
 			end
 		end
 
 		if weldToWorld == 1 then
-			for i = 1, #self.selectedProps do
-				local weld = constraint.Weld(self.selectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
+			for i = 1, #self.SelectedProps do
+				local weld = constraint.Weld(self.SelectedProps[i].ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
 		elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
-			for i = 1, #self.selectedProps do
-				local weld = constraint.Weld(self.selectedProps[i].ent, tr.Entity, self.selectedProps[i].bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
+			for i = 1, #self.SelectedProps do
+				local weld = constraint.Weld(self.SelectedProps[i].ent, tr.Entity, self.SelectedProps[i].bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
-		elseif #self.selectedProps < 128 then 	-- They want to do a normal weld but if it's more than 127 props we have to chunk it
-			for i = 1, #self.selectedProps do	-- Normal Weld
-				for otherProps = 1, #self.selectedProps do
-					if i ~= otherProps and i ~= #self.selectedProps then
-						if not IsValid(self.selectedProps[i].ent) or not IsValid(self.selectedProps[otherProps].ent) then continue end
-						local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[otherProps].ent, self.selectedProps[i].bone, self.selectedProps[otherProps].bone, weldForceLimit, nocollide, false)
+		elseif #self.SelectedProps < 128 then 	-- They want to do a normal weld but if it's more than 127 props we have to chunk it
+			for i = 1, #self.SelectedProps do	-- Normal Weld
+				for otherProps = 1, #self.SelectedProps do
+					if i ~= otherProps and i ~= #self.SelectedProps then
+						if not IsValid(self.SelectedProps[i].ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
+						local weld = constraint.Weld(self.SelectedProps[i].ent, self.SelectedProps[otherProps].ent, self.SelectedProps[i].bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
 						undo.AddEntity(weld)
 					end
 				end
 			end
 		else 	-- A normal weld that is done in a different way since it is with more than 127 props
-			for i = 1, #self.selectedProps do
-				if i == #self.selectedProps then
+			for i = 1, #self.SelectedProps do
+				if i == #self.SelectedProps then
 					break
 				end
 
-				local weld = constraint.Weld(self.selectedProps[i].ent, self.selectedProps[i+1].ent, self.selectedProps[i].bone, self.selectedProps[i+1].bone, weldForceLimit, nocollide, false)
+				local weld = constraint.Weld(self.SelectedProps[i].ent, self.SelectedProps[i+1].ent, self.SelectedProps[i].bone, self.SelectedProps[i+1].bone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
 		end
@@ -321,16 +322,16 @@ function TOOL:FinishWelding(entity)
 	if CLIENT then
 		local numProps = 0
 
-		for i = 1, #self.selectedProps do
-			if IsValid(self.selectedProps[i].ent) then
-				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
+		for i = 1, #self.SelectedProps do
+			if IsValid(self.SelectedProps[i].ent) then
+				self.SelectedProps[i].ent:SetColor(self.SelectedProps[i].col)
 				numProps = numProps + 1
 			end
 		end
 
 		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count
-			for i = 1, #self.selectedProps do
-				if self.selectedProps[i].ent == entity then
+			for i = 1, #self.SelectedProps do
+				if self.SelectedProps[i].ent == entity then
 					numProps = numProps + 1
 					break
 				end
@@ -342,14 +343,14 @@ function TOOL:FinishWelding(entity)
 			self:Notify('Weld complete! '..numProps..' props have been welded to each other.', NOTIFY_GENERIC)
 		end
 	end
-	self.selectedProps = {}
+	self.SelectedProps = {}
 	self:SetStage(1)
 end
 
 -- Checks if a prop has already been selected
 function TOOL:PropHasBeenSelected(ent)
-	for i = 1, #self.selectedProps do
-		if (ent == self.selectedProps[i].ent) then
+	for i = 1, #self.SelectedProps do
+		if (ent == self.SelectedProps[i].ent) then
 			return true
 		end
 	end
@@ -360,11 +361,11 @@ end
 -- Decides if we can we want to weld that ent or not
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
-		local pl = (SERVER) and self:GetOwner() or self.Owner
+		local pl = SERVER and self:GetOwner() or self.Owner
 		local tr = ply:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not (hook.Run('CanTool', pl, tr, 'smartweld') or self.AllowedClasses[ent:GetClass()])) then
+		if (not (hook.Run('CanTool', pl, tr, 'smartweld')) or (not self.AllowedClasses[ent:GetClass()]) then
 			return false
 		end
 		
