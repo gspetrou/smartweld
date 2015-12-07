@@ -1,127 +1,113 @@
---[[
-Smart Weld
-Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
-Originally by Duncan Stead (Dunk)				- Dont contact for support
-]]
-
-TOOL.AllowAllEntities = true -- For the bellow config to work this must be false
-TOOL.allowedClasses = {
-	"prop_physics",
-	"prop_ragdoll",
-	"prop_vehicle",
-	"prop_vehicle_jeep",
-	"prop_vehicle_airboat",
-	"prop_vehicle_apc",
-	"prop_vehicle_crane",
-	"prop_vehicle_prisoner_pod"
+TOOL.AllowedClasses = {
+	prop_physics 				= true,
+	prop_ragdoll 				= true,
+	prop_vehicle 				= true,
+	prop_vehicle_jeep 			= true,
+	prop_vehicle_airboat 		= true,
+	prop_vehicle_apc 			= true,
+	prop_vehicle_crane 			= true,
+	prop_vehicle_prisoner_pod	= true
 }
-local compatability_scars = true
-local compatability_wiremod = true
-/////////////////////
-////End of Config////
-/////////////////////
 
-
-TOOL.Category = "Constraints"
-TOOL.Name = "Weld - Smart"
-TOOL.ClientConVar["selectradius"] = 128
-TOOL.ClientConVar["selectinsideradius"] = 0
-TOOL.ClientConVar["nocollide"] = 1
-TOOL.ClientConVar["freeze"] = 0
-TOOL.ClientConVar["clearwelds"] = 1
-TOOL.ClientConVar["strength"] = 0
-TOOL.ClientConVar["world"] = 0
-TOOL.ClientConVar["color_r"] = 0
-TOOL.ClientConVar["color_g"] = 255
-TOOL.ClientConVar["color_b"] = 0
-TOOL.ClientConVar["color_a"] = 255
+TOOL.Category 						= 'Constraints'
+TOOL.Name 							= 'Weld - Smart'
+TOOL.ClientConVar['selectradius'] 	= 128
+TOOL.ClientConVar['nocollide'] 		= 1
+TOOL.ClientConVar['freeze'] 		= 0
+TOOL.ClientConVar['clearwelds']		= 1
+TOOL.ClientConVar['strength'] 		= 0
+TOOL.ClientConVar['world'] 			= 0
+TOOL.ClientConVar['color_r'] 		= 0
+TOOL.ClientConVar['color_g'] 		= 255
+TOOL.ClientConVar['color_b'] 		= 0
+TOOL.ClientConVar['color_a'] 		= 255
 
 if CLIENT then
-	language.Add("tool.smartweld.name", "Weld - Smart")
-	language.Add("tool.smartweld.desc", "Automatically welds selected props")
-	language.Add("tool.smartweld.0", "Left-click to select/deselect props. Use key and left click to auto-select.")
-	language.Add("tool.smartweld.1", "Right-click to weld selected props. Reload key to unselect all. Hold Use and right-click to weld everything to the prop you're looking at.")
-	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
-	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected")
-	language.Add("tool.smartweld.strength", "Force Limit:")
-	language.Add("tool.smartweld.strength.help", "The strength of the welds created. Use 0 for unbreakable welds")
-	language.Add("tool.smartweld.world", "Weld everything to world")
-	language.Add("tool.smartweld.world.help", "Turning this on will weld everything to the world. Useful for making something totally immovable")
-	language.Add("tool.smartweld.nocollide", "No-collide")
-	language.Add("tool.smartweld.nocollide.help", "Whether all props should no-collide each other when welded")
-	language.Add("tool.smartweld.freeze", "Auto-freeze")
-	language.Add("tool.smartweld.freeze.help", "Whether all selected props should be frozen after the weld")
-	language.Add("tool.smartweld.clearwelds", "Remove old welds")
-	language.Add("tool.smartweld.clearwelds.help", "If a selected prop has any welds already on it this will remove them first")
-	language.Add("tool.smartweld.color", "Selection color")
-	language.Add("tool.smartweld.color.help", "Modify the selection color to make the props look less idiotic")
-	language.Add("Undone_smartweld", "Undone Smart-Weld")
+	language.Add('tool.smartweld.name', 'Weld - Smart')
+	language.Add('tool.smartweld.desc', 'Automatically welds selected props')
+	language.Add('tool.smartweld.0', 'Left-click to select/deselect props. Use key and left click to auto-select.')
+	language.Add('tool.smartweld.1', 'Right-click to weld selected props. Reload key to unselect all. Hold Use and right-click to weld everything to the prop you\'re looking at.')
+	language.Add('tool.smartweld.selectoutsideradius', 'Auto-Select Radius:')
+	language.Add('tool.smartweld.selectoutsideradius.help', 'The auto-select radius, anything beyond this value wont be selected')
+	language.Add('tool.smartweld.strength', 'Force Limit:')
+	language.Add('tool.smartweld.strength.help', 'The strength of the welds created. Use 0 for unbreakable welds')
+	language.Add('tool.smartweld.world', 'Weld everything to world')
+	language.Add('tool.smartweld.world.help', 'Turning this on will weld everything to the world. Useful for making something totally immovable')
+	language.Add('tool.smartweld.nocollide', 'No-collide')
+	language.Add('tool.smartweld.nocollide.help', 'Whether all props should no-collide each other when welded')
+	language.Add('tool.smartweld.freeze', 'Auto-freeze')
+	language.Add('tool.smartweld.freeze.help', 'Whether all selected props should be frozen after the weld')
+	language.Add('tool.smartweld.clearwelds', 'Remove old welds')
+	language.Add('tool.smartweld.clearwelds.help', 'If a selected prop has any welds already on it this will remove them first')
+	language.Add('tool.smartweld.color', 'Selection color')
+	language.Add('tool.smartweld.color.help', 'Modify the selection color to make the props look less idiotic')
+	language.Add('Undone_smartweld', 'Undone Smart-Weld')
 end
 
 function TOOL.BuildCPanel(panel)
-	panel:SetName("Smart Weld")
+	panel:SetName('Smart Weld')
 
-	panel:AddControl("Header", {
-		Text = "",
-		Description = "Automatically welds selected props."
+	panel:AddControl('Header', {
+		Text = '',
+		Description = 'Automatically welds selected props.'
 	})
 
 	-- Outside Radius
-	panel:AddControl("Slider", {
-		Label = "#tool.smartweld.selectoutsideradius",
-		Help = "#tool.smartweld.selectoutsideradius",
-		Type = "float",
-		Min = "0",
-		Max = "1000",
-		Command = "smartweld_selectradius"
+	panel:AddControl('Slider', {
+		Label = '#tool.smartweld.selectoutsideradius',
+		Help = '#tool.smartweld.selectoutsideradius',
+		Type = 'float',
+		Min = '0',
+		Max = '1000',
+		Command = 'smartweld_selectradius'
 	})
 
 	-- Force Limit
-	panel:AddControl("Slider", {
-		Label = "#tool.smartweld.strength",
-		Help = "#tool.smartweld.strength",
-		Type = "float",
-		Min = "0",
-		Max = "10000",
-		Command = "smartweld_strength"
+	panel:AddControl('Slider', {
+		Label = '#tool.smartweld.strength',
+		Help = '#tool.smartweld.strength',
+		Type = 'float',
+		Min = '0',
+		Max = '10000',
+		Command = 'smartweld_strength'
 	})
 
 	-- Weld to each other or all to world
-	panel:AddControl("Checkbox", {
-		Label = "#tool.smartweld.world",
-		Help = "#tool.smartweld.world",
-		Command = "smartweld_world"
+	panel:AddControl('Checkbox', {
+		Label = '#tool.smartweld.world',
+		Help = '#tool.smartweld.world',
+		Command = 'smartweld_world'
 	})
 
 	-- No-Collide Props While Welding
-	panel:AddControl("Checkbox", {
-		Label = "#tool.smartweld.nocollide",
-		Help = "#tool.smartweld.nocollide",
-		Command = "smartweld_nocollide"
+	panel:AddControl('Checkbox', {
+		Label = '#tool.smartweld.nocollide',
+		Help = '#tool.smartweld.nocollide',
+		Command = 'smartweld_nocollide'
 	})
 
 	-- Freeze Props When Welded
-	panel:AddControl("Checkbox", {
-		Label = "#tool.smartweld.freeze",
-		Help = "#tool.smartweld.freeze",
-		Command = "smartweld_freeze"
+	panel:AddControl('Checkbox', {
+		Label = '#tool.smartweld.freeze',
+		Help = '#tool.smartweld.freeze',
+		Command = 'smartweld_freeze'
 	})
 
 	-- Clear Previous Welds Before Welding
-	panel:AddControl("Checkbox", {
-		Label = "#tool.smartweld.clearwelds",
-		Help = "#tool.smartweld.clearwelds",
-		Command = "smartweld_clearwelds"
+	panel:AddControl('Checkbox', {
+		Label = '#tool.smartweld.clearwelds',
+		Help = '#tool.smartweld.clearwelds',
+		Command = 'smartweld_clearwelds'
 	})
 
 	-- Color
-	panel:AddControl("Color", {
-		Label = "#tool.smartweld.color",
-		Help = "#tool.smartweld.color",
-		Red = "smartweld_color_r",
-		Green = "smartweld_color_g",
-		Blue = "smartweld_color_b",
-		Alpha = "smartweld_color_a"
+	panel:AddControl('Color', {
+		Label = '#tool.smartweld.color',
+		Help = '#tool.smartweld.color',
+		Red = 'smartweld_color_r',
+		Green = 'smartweld_color_g',
+		Blue = 'smartweld_color_b',
+		Alpha = 'smartweld_color_a'
 	})
 end
  
@@ -162,10 +148,10 @@ end
 
 -- Auto-selects props
 function TOOL:AutoSelect(ent)
-	if not ent:IsValid() then return false end
+	if not IsValid(ent) then return false end
 	local preAutoSelect = #self.selectedProps
 
-	local selectRadius = self:GetClientNumber("selectradius")
+	local selectRadius = self:GetClientNumber('selectradius')
 	local radiusProps = ents.FindInSphere(ent:GetPos(), selectRadius)
 	if #radiusProps < 1 then return false end
 
@@ -179,12 +165,12 @@ function TOOL:AutoSelect(ent)
 		end
 	end
 
-	self:Notify((#self.selectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
+	self:Notify((#self.selectedProps-preAutoSelect)..' prop(s) have been auto-selected.', NOTIFY_GENERIC)
 end
 
 -- Decides if we should select it or deselect the specified entity
 function TOOL:HandleProp(tr)
-	if not tr.Entity:IsValid() then return false end
+	if not IsValid(tr.Entity) then return false end
 
 	if #self.selectedProps == 0 then
 		self:SelectProp(tr.Entity, tr.PhysicsBone)
@@ -232,7 +218,7 @@ function TOOL:SelectProp(entity, hitBoneNum)
 		})
 
 		if CLIENT or game.SinglePlayer() then
-			entity:SetColor(Color(self:GetClientNumber("color_r", 0), self:GetClientNumber("color_g", 0), self:GetClientNumber("color_b", 0), self:GetClientNumber("color_a", 255)))
+			entity:SetColor(Color(self:GetClientNumber('color_r', 0), self:GetClientNumber('color_g', 0), self:GetClientNumber('color_b', 0), self:GetClientNumber('color_a', 255)))
 		end
 		return true
 	end
@@ -251,35 +237,35 @@ function TOOL:Reload()
 		end
 		
 		self.selectedProps = nil
-		self:Notify("Prop Selection Cleared", NOTIFY_CLEANUP)
+		self:Notify('Prop Selection Cleared', NOTIFY_CLEANUP)
 	end
 end
 
 -- Handles the welding
 function TOOL:RightClick(tr)
 	if not self.selectedProps or #self.selectedProps == 0 then
-		self:Notify("No props selected!", NOTIFY_GENERIC)
+		self:Notify('No props selected!', NOTIFY_GENERIC)
 		return false
 	elseif #self.selectedProps == 1 then
-		self:Notify("Select at least one more prop to weld.", NOTIFY_GENERIC)
+		self:Notify('Select at least one more prop to weld.', NOTIFY_GENERIC)
 		return false
 	end
 
 	if SERVER then
-		local weldForceLimit = math.floor(self:GetClientNumber("strength"))
-		local weldToWorld = self:GetClientNumber("world")
-		local freezeProps = self:GetClientNumber("freeze")
-		local removeOldWelds = self:GetClientNumber("clearwelds")
-		local nocollide = tobool(self:GetClientNumber("nocollide"))
+		local weldForceLimit = math.floor(self:GetClientNumber('strength'))
+		local weldToWorld = self:GetClientNumber('world')
+		local freezeProps = self:GetClientNumber('freeze')
+		local removeOldWelds = self:GetClientNumber('clearwelds')
+		local nocollide = tobool(self:GetClientNumber('nocollide'))
 
-		undo.Create("smartweld")
+		undo.Create('smartweld')
 
 		
 		-- Any code in this loop runs before the actual welding, like removing old welds or freezing the props.
 		for i = 1, #self.selectedProps do
 			-- Refresh welds, it removed pre-existing welds on the selected entities before making the smartweld.
 			if removeOldWelds == 1 then
-				local propsconstraints = constraint.FindConstraints(self.selectedProps[i].ent, "Weld")
+				local propsconstraints = constraint.FindConstraints(self.selectedProps[i].ent, 'Weld')
 
 				if propsconstraints then
 					for i = 1, #propsconstraints do
@@ -290,7 +276,7 @@ function TOOL:RightClick(tr)
 
 			-- Will freeze all the props if that option is enabled
 			if freezeProps == 1 then
-				if self.selectedProps[i].ent:IsValid() then
+				if self.selectedProps[i].IsValid(ent) then
 					local propPhys = self.selectedProps[i].ent:GetPhysicsObject()
 					propPhys:EnableMotion(false)
 					propPhys:Sleep()
@@ -356,14 +342,14 @@ function TOOL:FinishWelding(entity)
 					break
 				end
 			end
-			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
-		elseif tobool(self:GetClientNumber("world")) then
-			self:Notify("Weld complete! "..numProps.." props have been welded to the world.", NOTIFY_GENERIC)
+			self:Notify('Weld complete! '..numProps..' props have been welded to a single prop.', NOTIFY_GENERIC)
+		elseif tobool(self:GetClientNumber('world')) then
+			self:Notify('Weld complete! '..numProps..' props have been welded to the world.', NOTIFY_GENERIC)
 		else
-			self:Notify("Weld complete! "..numProps.." props have been welded to each other.", NOTIFY_GENERIC)
+			self:Notify('Weld complete! '..numProps..' props have been welded to each other.', NOTIFY_GENERIC)
 		end
 	end
-	if SERVER then print(self:GetOwner():Nick().." ("..self:GetOwner():SteamID()..") succesfully welded "..#self.selectedProps.." props.") end
+	if SERVER then print(self:GetOwner():Nick()..' ('..self:GetOwner():SteamID()..') succesfully welded '..#self.selectedProps..' props.') end
 	self.selectedProps = nil
 	self:SetStage(1)
 end
@@ -378,86 +364,28 @@ function TOOL:PropHasBeenSelected(ent)
 		return false
 	end
 
-	for k, v in pairs(self.selectedProps) do
-		if ent == self.selectedProps[k].ent then
+	for k, v in ipairs(self.selectedProps) do
+		if (ent == v.ent) then
 			return true
 		end
 	end
+
 	return false
 end
 
 -- Decides if we can we want to weld that ent or not
 function TOOL:IsAllowedEnt(ent)
-	if not ent:IsValid() then return false end
-	
-	local ply = SERVER and self:GetOwner() or self.Owner
-	local tr = ply:GetEyeTrace()
-	tr.entity = ent
+	if IsValid(ent) then
+		local pl = (SERVER) and self:GetOwner() or self.Owner
+		local tr = ply:GetEyeTrace()
+		tr.Entity = ent
 
-	-- For checking prop ownership, thanks aStonedPenguin
-	if not hook.Run("CanTool", ply, tr, "smartweld") then
-		return false
-	end
-
-	if ent:IsPlayer() then return false end
-	if SERVER and ent:CreatedByMap() then return false end
-
-	local entBlacklist = {	-- You shouldn't want to remove these, you can add to it if you want though.
-		"soundent",
-		"player_manager",
-		"gmod_gamerules",
-		"bodyque",
-		"ai_network",
-		"predicted_viewmodel",
-		"gmod_hands",
-		"scene_manager",
-		"viewmodel",
-		"network"
-	}
-
-	for i = 1, #entBlacklist do
-		if ent:GetClass() == entBlacklist[i] then
+		if (not hook.Run('CanTool', pl, tr, 'smartweld')) then
 			return false
 		end
-	end
 
-	if ent:IsWeapon() then -- If they have the weapon in their inventory then don't weld it
-		if ply:HasWeapon(ent:GetClass()) then
+		if (not self.AllowedClasses[ent:GetClass()]) then
 			return false
-		end
-	end
-
-	if IsValid(ent:GetParent()) then
-		self:IsAllowedEnt(ent:GetParent()) -- Only weld the parent ent
-		return false
-	end
-
-	if self.AllowAllEntities then
-		if isentity(ent) then
-			return true
-		end
-	end
-
-	-- Nothing bellow here should be ran if self.AllowAllEntities is true
-	for i = 1, #self.allowedClasses do
-		if ent:GetClass() == self.allowedClasses[i] then
-			return true
-		end
-	end
-
-	if baseclass.Get(ent:GetClass()).Base == "base_gmodentity" then
-		return true
-	end
-
-	if compatability_wiremod then
-		if baseclass.Get(ent:GetClass()).Base == "base_wire_entity" then
-			return true
-		end
-	end
-
-	if compatability_scars then
-		if baseclass.Get(ent:GetClass()).Base == "sent_sakarias_scar_base" then
-			return true
 		end
 	end
 	
@@ -467,13 +395,13 @@ end
 -- Puts one of those annoying notifications to the lower right of the screen
 function TOOL:Notify(text, notifyType)
 	if game.SinglePlayer() then
-		self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", NOTIFY_GENERIC, 5)")	-- Because singleplayer is doodoo
-		self:GetOwner():SendLua("surface.PlaySound(\"buttons/button15.wav\")")
+		self:GetOwner():SendLua('GAMEMODE:AddNotify(\''..text..'\', NOTIFY_GENERIC, 5)')	-- Because singleplayer is doodoo
+		self:GetOwner():SendLua('surface.PlaySound(\'buttons/button15.wav\')')
 	else
 		if not IsValid(self.Owner) or self.Owner ~= LocalPlayer() then return end
 		if IsFirstTimePredicted() then
 			notification.AddLegacy(text, notifyType, 5)
-			surface.PlaySound("buttons/button15.wav")
+			surface.PlaySound('buttons/button15.wav')
 		end
 	end
 end
