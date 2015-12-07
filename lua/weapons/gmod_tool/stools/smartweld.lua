@@ -21,6 +21,7 @@ TOOL.ClientConVar['color_r'] 		= 0
 TOOL.ClientConVar['color_g'] 		= 255
 TOOL.ClientConVar['color_b'] 		= 0
 TOOL.ClientConVar['color_a'] 		= 255
+TOOL.selectedProps = {}
 
 if CLIENT then
 	language.Add('tool.smartweld.name', 'Weld - Smart')
@@ -116,25 +117,22 @@ end
 
 --Clear selected props when you die or holster the tool
 function TOOL:Holster()
-	if (CLIENT or game.SinglePlayer()) and self.selectedProps and #self.selectedProps ~= 0 then
+	if CLIENT then
 		for i = 1, #self.selectedProps do
 			if IsValid(self.selectedProps[i].ent) then
 				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
 			end
 		end
 	end
-	self.selectedProps = nil
+	self.selectedProps = {}
 	self:SetStage(1)
 end
 
 -- Does some validity checks then either selects or deselects the prop
 function TOOL:LeftClick(tr)
-	if IsFirstTimePredicted() then
-		if not IsValid(tr.Entity) or tr.Entity:IsPlayer() then return false end
-		if SERVER and not util.IsValidPhysicsObject(tr.Entity, tr.PhysicsBone) then return false end
-
-		if not self.selectedProps then
-			self.selectedProps = {}	-- This will be a useful shared table housing every selected prop, it's original color, and selected bone
+	if IsFirstTimePredicted() and IsValid(tr.Entity) and not tr.Entity:IsPlayer() then
+		if SERVER and not util.IsValidPhysicsObject(tr.Entity, tr.PhysicsBone) then
+			return false 
 		end
 
 		if self:GetOwner():KeyDown(IN_USE) then
@@ -170,8 +168,6 @@ end
 
 -- Decides if we should select it or deselect the specified entity
 function TOOL:HandleProp(tr)
-	if not IsValid(tr.Entity) then return false end
-
 	if #self.selectedProps == 0 then
 		self:SelectProp(tr.Entity, tr.PhysicsBone)
 	else
@@ -192,7 +188,7 @@ end
 function TOOL:DeselectProp(ent)
 	for k, v in pairs(self.selectedProps) do
 		if self.selectedProps[k].ent == ent then
-			if CLIENT or game.SinglePlayer() then
+			if CLIENT then
 				ent:SetColor(self.selectedProps[k].col)
 			end
 			table.remove(self.selectedProps, k)
@@ -217,7 +213,7 @@ function TOOL:SelectProp(entity, hitBoneNum)
 			bone = boneNum
 		})
 
-		if CLIENT or game.SinglePlayer() then
+		if CLIENT then
 			entity:SetColor(Color(self:GetClientNumber('color_r', 0), self:GetClientNumber('color_g', 0), self:GetClientNumber('color_b', 0), self:GetClientNumber('color_a', 255)))
 		end
 		return true
@@ -230,24 +226,21 @@ function TOOL:Reload()
 	if IsFirstTimePredicted() and self.selectedProps then
 		self:SetStage(1)
 
-		if CLIENT or game.SinglePlayer() then
+		if CLIENT then
 			for i = 1, #self.selectedProps do
 				self.selectedProps[i].ent:SetColor(self.selectedProps[i].col)
 			end
 		end
 		
-		self.selectedProps = nil
+		self.selectedProps = {}
 		self:Notify('Prop Selection Cleared', NOTIFY_CLEANUP)
 	end
 end
 
 -- Handles the welding
 function TOOL:RightClick(tr)
-	if not self.selectedProps or #self.selectedProps == 0 then
-		self:Notify('No props selected!', NOTIFY_GENERIC)
-		return false
-	elseif #self.selectedProps == 1 then
-		self:Notify('Select at least one more prop to weld.', NOTIFY_GENERIC)
+	if #self.selectedProps <= 1 then
+		self:Notify((#self.selectedProps == 1 and 'Select at least one more prop to weld.' or 'No props selected!'), NOTIFY_GENERIC)
 		return false
 	end
 
@@ -325,7 +318,7 @@ function TOOL:RightClick(tr)
 end
 
 function TOOL:FinishWelding(entity)
-	if CLIENT or game.SinglePlayer() then
+	if CLIENT then
 		local numProps = 0
 
 		for i = 1, #self.selectedProps do
@@ -349,17 +342,18 @@ function TOOL:FinishWelding(entity)
 			self:Notify('Weld complete! '..numProps..' props have been welded to each other.', NOTIFY_GENERIC)
 		end
 	end
-	self.selectedProps = nil
+	self.selectedProps = {}
 	self:SetStage(1)
 end
 
 -- Checks if a prop has already been selected
 function TOOL:PropHasBeenSelected(ent)
-	for k, v in ipairs(self.selectedProps) do
-		if (ent == v.ent) then
+	for i = 1, #self.selectedProps do
+		if (ent == self.selectedProps[i].ent) then
 			return true
 		end
 	end
+
 	return false
 end
 
@@ -370,13 +364,11 @@ function TOOL:IsAllowedEnt(ent)
 		local tr = ply:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not hook.Run('CanTool', pl, tr, 'smartweld')) then
+		if (not (hook.Run('CanTool', pl, tr, 'smartweld') or self.AllowedClasses[ent:GetClass()])) then
 			return false
 		end
-
-		if (not self.AllowedClasses[ent:GetClass()]) then
-			return false
-		end
+		
+		return true
 	end
 	
 	return false
@@ -384,14 +376,8 @@ end
 
 -- Puts one of those annoying notifications to the lower right of the screen
 function TOOL:Notify(text, notifyType)
-	if game.SinglePlayer() then
-		self:GetOwner():SendLua('GAMEMODE:AddNotify(\''..text..'\', NOTIFY_GENERIC, 5)')	-- Because singleplayer is doodoo
-		self:GetOwner():SendLua('surface.PlaySound(\'buttons/button15.wav\')')
-	else
-		if not IsValid(self.Owner) or self.Owner ~= LocalPlayer() then return end
-		if IsFirstTimePredicted() then
-			notification.AddLegacy(text, notifyType, 5)
-			surface.PlaySound('buttons/button15.wav')
-		end
+	if CLIENT and IsFirstTimePredicted() and IsValid(self.Owner) then
+		notification.AddLegacy(text, notifyType, 5)
+		surface.PlaySound('buttons/button15.wav')
 	end
 end
