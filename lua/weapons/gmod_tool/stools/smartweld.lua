@@ -240,7 +240,7 @@ end
 
 -- Handles the welding
 function TOOL:RightClick(tr)
-	if #self.SelectedProps <= 1 then
+	if (#self.SelectedProps <= 1) then
 		self:Notify((#self.SelectedProps == 1 and 'Select at least one more prop to weld.' or 'No props selected!'), NOTIFY_GENERIC)
 		return false
 	end
@@ -263,16 +263,17 @@ function TOOL:RightClick(tr)
 
 			-- Will freeze all the props if that option is enabled
 			if (freezeProps == 1) then
-				if IsValid(v.ent) and IsValid(v.ent:GetPhysicsObject()) then
-					local plysobj = v.ent:GetPhysicsObject()
-					plysobj:EnableMotion(false)
-					plysobj:Sleep()
-					self:GetOwner():AddFrozenPhysicsObject(v.ent, plysobj)
+				if IsValid(v.ent) then
+					local physobj = v.ent:GetPhysicsObject()
+					if IsValid(physobj) then
+						physobj:EnableMotion(false)
+						self:GetOwner():AddFrozenPhysicsObject(v.ent, physobj)
+					end
 				end
 			end
 		end
 
-		if weldToWorld == 1 then
+		if (weldToWorld == 1) then
 			for k, v in ipairs(self.SelectedProps) do
 				local weld = constraint.Weld(v.ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
@@ -282,10 +283,10 @@ function TOOL:RightClick(tr)
 				local weld = constraint.Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
-		elseif #self.SelectedProps < 128 then 	-- They want to do a normal weld but if it's more than 127 props we have to chunk it
+		elseif (#self.SelectedProps < 128) then 	-- They want to do a normal weld but if it's more than 127 props we have to chunk it
 			for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
 				for otherProps = 1, #self.SelectedProps do
-					if i ~= otherProps and i ~= #self.SelectedProps then
+					if (i ~= otherProps) and (i ~= #self.SelectedProps) then
 						if not IsValid(v.ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
 						local weld = constraint.Weld(v.ent, self.SelectedProps[otherProps].ent, v.bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
 						undo.AddEntity(weld)
@@ -293,11 +294,7 @@ function TOOL:RightClick(tr)
 				end
 			end
 		else 	-- A normal weld that is done in a different way since it is with more than 127 props
-			for k, v in ipairs(self.SelectedProps) do
-				if i == #self.SelectedProps then
-					break
-				end
-
+			for i = 1, #self.selectedProps do
 				local weld = constraint.Weld(v.ent, self.SelectedProps[i+1].ent, v.bone, self.SelectedProps[i+1].bone, weldForceLimit, nocollide, false)
 				undo.AddEntity(weld)
 			end
@@ -324,7 +321,7 @@ function TOOL:FinishWelding(entity)
 
 		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count
 			for k, v in ipairs(self.SelectedProps) do
-				if v.ent == entity then
+				if (v.ent == entity) then
 					numProps = numProps + 1
 					break
 				end
