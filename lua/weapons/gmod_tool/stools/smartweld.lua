@@ -13,7 +13,7 @@ TOOL.SelectedProps = {}
 
 TOOL.Category 						= 'Constraints'
 TOOL.Name 							= 'Weld - Smart'
-TOOL.ClientConVar['selectradius'] 	= 128
+TOOL.ClientConVar['selectradius'] 	= 100
 TOOL.ClientConVar['nocollide'] 		= 1
 TOOL.ClientConVar['freeze'] 		= 0
 TOOL.ClientConVar['clearwelds']		= 1
@@ -60,7 +60,7 @@ function TOOL.BuildCPanel(panel)
 		Help = '#tool.smartweld.selectoutsideradius',
 		Type = 'float',
 		Min = '0',
-		Max = '1000',
+		Max = '500',
 		Command = 'smartweld_selectradius'
 	})
 
@@ -257,23 +257,17 @@ function TOOL:RightClick(tr)
 		-- Any code in this loop runs before the actual welding, like removing old welds or freezing the props.
 		for k, v in ipairs(self.SelectedProps) do
 			-- Refresh welds, it removed pre-existing welds on the selected entities before making the smartweld.
-			if removeOldWelds == 1 then
-				local propsconstraints = constraint.FindConstraints(v.ent, 'Weld')
-
-				if propsconstraints then
-					for _, c in ipairs(propsconstraints) do
-						c.Constraint:Remove()
-					end
-				end
+			if (removeOldWelds == 1) then
+				constraint.RemoveConstraints(v.ent, 'Weld') 
 			end
 
 			-- Will freeze all the props if that option is enabled
-			if freezeProps == 1 then
-				if v.IsValid(ent) then
-					local propPhys = v.ent:GetPhysicsObject()
-					propPhys:EnableMotion(false)
-					propPhys:Sleep()
-					self:GetOwner():AddFrozenPhysicsObject(v.ent, propPhys)
+			if (freezeProps == 1) then
+				if IsValid(v.ent) and IsValid(v.ent:GetPhysicsObject()) then
+					local plysobj = v.ent:GetPhysicsObject()
+					plysobj:EnableMotion(false)
+					plysobj:Sleep()
+					self:GetOwner():AddFrozenPhysicsObject(v.ent, plysobj)
 				end
 			end
 		end
@@ -361,10 +355,10 @@ end
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
 		local pl = SERVER and self:GetOwner() or self.Owner
-		local tr = ply:GetEyeTrace()
+		local tr = pl:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not (hook.Run('CanTool', pl, tr, 'smartweld')) or (not self.AllowedClasses[ent:GetClass()]) then
+		if (not hook.Run('CanTool', pl, tr, 'smartweld')) or (not self.AllowedClasses[ent:GetClass()]) then
 			return false
 		end
 		
