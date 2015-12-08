@@ -192,7 +192,7 @@ function TOOL:DeselectProp(ent)
 			if CLIENT then
 				ent:SetColor(v.col)
 			end
-			table.remove(self.SelectedProps, i)
+			table.remove(self.SelectedProps, k)
 		end
 	end
 
