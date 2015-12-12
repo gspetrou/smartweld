@@ -353,7 +353,7 @@ function TOOL:PropHasBeenSelected(ent)
 	return false
 end
 
--- Decides if we can we want to weld that ent or not
+-- Decides if we want to weld the entity or not
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
 		local ply = SERVER and self:GetOwner() or self.Owner
