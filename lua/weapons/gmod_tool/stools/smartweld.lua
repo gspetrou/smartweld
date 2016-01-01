@@ -15,6 +15,12 @@ TOOL.AllowedClasses = {
 	prop_vehicle_prisoner_pod	= true
 }
 
+TOOL.AllowedBaseClasses = {
+	base_gmodentity 			= true,
+	base_wire_entity 			= true,
+	sent_sakarias_scar_base		= true
+}
+
 TOOL.Category 						= "Constraints"
 TOOL.Name 							= "Weld - Smart"
 TOOL.ClientConVar["selectradius"] 	= 100
@@ -360,10 +366,10 @@ function TOOL:IsAllowedEnt(ent)
 		local tr = ply:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not hook.Run("CanTool", ply, tr, "smartweld")) or (not self.AllowedClasses[ent:GetClass()]) then
+		if (not hook.Run("CanTool", ply, tr, "smartweld")) or ((not self.AllowedBaseClasses[baseclass.Get(ent:GetClass()).Base]) and (not self.AllowedClasses[ent:GetClass()])) then
 			return false
 		end
-		
+
 		return true
 	end
 	
