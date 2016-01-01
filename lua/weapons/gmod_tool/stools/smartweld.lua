@@ -257,42 +257,65 @@ function TOOL:RightClick(tr)
 	end
 
 	if SERVER then
-		local weldForceLimit = math.floor(self:GetClientNumber("strength"))
-		local weldToWorld = self:GetClientNumber("world")
-		local freezeProps = self:GetClientNumber("freeze")
-		local removeOldWelds = self:GetClientNumber("clearwelds")
-		local nocollide = tobool(self:GetClientNumber("nocollide"))
-
 		undo.Create("smartweld")
 
-		-- Any code in this loop runs before the actual welding, like removing old welds or freezing the props.
-		for k, v in ipairs(self.SelectedProps) do
-			-- Refresh welds, it removed pre-existing welds on the selected entities before making the smartweld.
-			if (removeOldWelds == 1) then
-				constraint.RemoveConstraints(v.ent, "Weld") 
-			end
+			self:PreWeld()
+			self:PerformWeld(tr)	
 
-			-- Will freeze all the props if that option is enabled
-			if (freezeProps == 1) then
-				if IsValid(v.ent) then
-					local physobj = v.ent:GetPhysicsObject()
-					if IsValid(physobj) then
-						physobj:EnableMotion(false)
-						self:GetOwner():AddFrozenPhysicsObject(v.ent, physobj)
-					end
+			undo.SetPlayer(self:GetOwner())
+		undo.Finish()
+	end
+
+	self:FinishWelding(tr.Entity)
+	return false
+end
+
+-- Does stuff that should happen before welding such as clearing old welds or freezing all the props
+function TOOL:PreWeld()
+	local freezeProps = self:GetClientNumber("freeze")
+	local removeOldWelds = self:GetClientNumber("clearwelds")
+
+	for k, v in ipairs(self.SelectedProps) do
+		if (removeOldWelds == 1) then
+			constraint.RemoveConstraints(v.ent, "Weld") 
+		end
+
+		if (freezeProps == 1) then
+			if IsValid(v.ent) then
+				local physobj = v.ent:GetPhysicsObject()
+				if IsValid(physobj) then
+					physobj:EnableMotion(false)
+					self:GetOwner():AddFrozenPhysicsObject(v.ent, physobj)
 				end
 			end
 		end
+	end
+end
 
-		if (weldToWorld == 1) then
-			for k, v in ipairs(self.SelectedProps) do
-				local weld = constraint.Weld(v.ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
-				undo.AddEntity(weld)
-			end
-		elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
-			for k, v in ipairs(self.SelectedProps) do
-				local weld = constraint.Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
-				undo.AddEntity(weld)
+-- Decides what kind of weld to perform and then does it
+function TOOL:PerformWeld()
+	local weldToWorld = self:GetClientNumber("world")
+	local nocollide = tobool(self:GetClientNumber("nocollide"))
+	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
+
+	if (weldToWorld == 1) then
+		for k, v in ipairs(self.SelectedProps) do
+			local weld = constraint.Weld(v.ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
+			undo.AddEntity(weld)
+		end
+	elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
+		for k, v in ipairs(self.SelectedProps) do
+			local weld = constraint.Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
+			undo.AddEntity(weld)
+		end
+	elseif (#self.SelectedProps < 128) then
+		for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
+			for otherProps = 1, #self.SelectedProps do
+				if (i ~= otherProps) and (i ~= #self.SelectedProps) then
+					if not IsValid(v.ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
+					local weld = constraint.Weld(v.ent, self.SelectedProps[otherProps].ent, v.bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
+					undo.AddEntity(weld)
+				end
 			end
 		elseif (#self.SelectedProps < 128) then 	-- They want to do a normal weld but if it"s more than 127 props we have to chunk it
 			for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
@@ -310,13 +333,8 @@ function TOOL:RightClick(tr)
 				undo.AddEntity(weld)
 			end
 		end
-
-		undo.SetPlayer(self:GetOwner())
-		undo.Finish()
+		
 	end
-
-	self:FinishWelding(tr.Entity)
-	return false
 end
 
 function TOOL:FinishWelding(entity)
