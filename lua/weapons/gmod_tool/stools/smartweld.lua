@@ -317,20 +317,52 @@ function TOOL:PerformWeld()
 					undo.AddEntity(weld)
 				end
 			end
-		elseif (#self.SelectedProps < 128) then 	-- They want to do a normal weld but if it"s more than 127 props we have to chunk it
-			for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
-				for otherProps = 1, #self.SelectedProps do
-					if (i ~= otherProps) and (i ~= #self.SelectedProps) then
-						if not IsValid(v.ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
-						local weld = constraint.Weld(v.ent, self.SelectedProps[otherProps].ent, v.bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
-						undo.AddEntity(weld)
+		end
+	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props
+		local welds = {}
+		local weldcount = 0
+		for k,v in ipairs(self.SelectedProps) do
+			welds[k] = {}
+		end
+
+		for k, v in ipairs(self.SelectedProps) do
+			for x = 1, 10 do
+				local closestdistance = 99999999
+				local closestprop = -1
+
+				for d, j in ipairs(self.SelectedProps) do
+					if k ~= d then
+						local linked = false
+
+						for k, val in ipairs(welds[k]) do
+							if val == d then
+								linked = true
+								break
+							end
+						end
+
+						if not linked then
+							local distance = (v.ent:GetPos() - j.ent:GetPos()):Length()
+
+							if distance < closestdistance then
+								closestdistance = distance
+								closestprop = d
+							end
+						end
 					end
 				end
-			end
-		else 	-- A normal weld that is done in a different way since it is with more than 127 props
-			for i = 1, #self.selectedProps do
-				local weld = constraint.Weld(v.ent, self.SelectedProps[i+1].ent, v.bone, self.SelectedProps[i+1].bone, weldForceLimit, nocollide, false)
-				undo.AddEntity(weld)
+
+				if closestprop ~= -1 then
+					--weld to this prop and add to weld list
+					local weld = constraint.Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
+					undo.AddEntity(weld)
+
+					weldcount = weldcount + 1
+					table.insert(welds[k], closestprop)
+					table.insert(welds[closestprop], k)
+				else
+					break
+				end
 			end
 		end
 		
