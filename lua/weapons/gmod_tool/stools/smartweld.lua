@@ -5,19 +5,25 @@ Originally by Duncan Stead (Dunk)				- Dont contact for support
 ]]
 
 TOOL.AllowedClasses = {
-	prop_physics 				= true,
-	prop_ragdoll 				= true,
-	prop_vehicle 				= true,
-	prop_vehicle_jeep 			= true,
-	prop_vehicle_airboat 		= true,
-	prop_vehicle_apc 			= true,
-	prop_vehicle_crane 			= true,
+	prop_physics				= true,
+	prop_ragdoll				= true,
+	prop_vehicle				= true,
+	prop_vehicle_jeep			= true,
+	prop_vehicle_airboat		= true,
+	prop_vehicle_apc			= true,
+	prop_vehicle_crane			= true,
 	prop_vehicle_prisoner_pod	= true
 }
 
 TOOL.AllowedBaseClasses = {
-	base_gmodentity 			= true,
-	base_wire_entity 			= true,
+	base_entity					= true,
+	base_edit					= true,
+	base_anim					= true,
+	base_gmodentity				= true,
+	base_wire_entity			= true,
+	wac_hc_base					= true,
+	wac_pl_base					= true,
+	wac_pod_base				= true,
 	sent_sakarias_scar_base		= true
 }
 
