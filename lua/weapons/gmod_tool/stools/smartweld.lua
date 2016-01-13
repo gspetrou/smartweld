@@ -1,6 +1,6 @@
 --[[
 Smart Weld
-Created by: Stalkur (STEAM_0:1:18093014)		- Contact for support
+Created by: Stalker (STEAM_0:1:18093014)		- Contact for support
 Originally by Duncan Stead (Dunk)				- Dont contact for support
 ]]
 
@@ -39,7 +39,7 @@ if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
 	language.Add("tool.smartweld.desc", "Automatically welds selected props")
 	language.Add("tool.smartweld.0", "Left-click to select/deselect props. Use key and left click to auto-select.")
-	language.Add("tool.smartweld.1", "Right-click to weld selected props. Reload key to unselect all. Hold Use and right-click to weld everything to the prop you\"re looking at.")
+	language.Add("tool.smartweld.1", "Right-click to weld selected props. Reload key to unselect all. Hold Use and right-click to weld everything to the prop you\'re looking at.")
 	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
 	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected")
 	language.Add("tool.smartweld.strength", "Force Limit:")
@@ -53,7 +53,7 @@ if CLIENT then
 	language.Add("tool.smartweld.clearwelds", "Remove old welds")
 	language.Add("tool.smartweld.clearwelds.help", "If a selected prop has any welds already on it this will remove them first")
 	language.Add("tool.smartweld.color", "Selection color")
-	language.Add("tool.smartweld.color.help", "Modify the selection color to make the props look less idiotic")
+	language.Add("tool.smartweld.color.help", "Modify the selection color, it\'s useful for grouping")
 	language.Add("Undone_smartweld", "Undone Smart-Weld")
 end
 
@@ -127,7 +127,7 @@ end
 function TOOL:Deploy()
 end
 
---Clear selected props when you die or holster the tool
+-- Clears selected props when you die or holster the tool
 function TOOL:Holster()
 	if CLIENT or game.SinglePlayer() then
 		for k, v in ipairs(self.SelectedProps) do
@@ -178,7 +178,7 @@ function TOOL:AutoSelect(ent)
 	self:Notify((#self.SelectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
 end
 
--- Decides if we should select it or deselect the specified entity
+-- Decides if we should select or deselect the specified entity
 function TOOL:HandleProp(tr)
 	if #self.SelectedProps == 0 then
 		self:SelectProp(tr.Entity, tr.PhysicsBone)
@@ -196,7 +196,7 @@ function TOOL:HandleProp(tr)
 	return true
 end
 
--- Deselectes the chosen prop
+-- Deselects the chosen prop
 function TOOL:DeselectProp(ent)
 	for k, v in ipairs(self.SelectedProps) do
 		if v.ent == ent then
@@ -353,7 +353,7 @@ function TOOL:PerformWeld()
 				end
 
 				if closestprop ~= -1 then
-					--weld to this prop and add to weld list
+					-- Weld to this prop and add to weld list
 					local weld = constraint.Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
 					undo.AddEntity(weld)
 
