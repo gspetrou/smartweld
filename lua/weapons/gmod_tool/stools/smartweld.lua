@@ -21,6 +21,8 @@ TOOL.AllowedBaseClasses = {
 	sent_sakarias_scar_base		= true
 }
 
+TOOL.MaxWeldsPerProp = 10 -- Only for when you weld more than 127 props at once
+
 TOOL.Category 						= "Constraints"
 TOOL.Name 							= "Weld - Smart"
 TOOL.ClientConVar["selectradius"] 	= 100
@@ -326,7 +328,7 @@ function TOOL:PerformWeld()
 		end
 
 		for k, v in ipairs(self.SelectedProps) do
-			for x = 1, 10 do
+			for x = 1, self.MaxWeldsPerProp do
 				local closestdistance = 99999999
 				local closestprop = -1
 
