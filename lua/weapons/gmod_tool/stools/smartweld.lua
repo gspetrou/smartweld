@@ -47,10 +47,24 @@ if game.SinglePlayer() then
 end
 
 if CLIENT then
+	TOOL.Information = {
+		{name = "left"},
+		{name = "leftuse"},
+		{name = "right", stage = 2},
+		{name = "rightuse", stage = 2},
+		{name = "reload", stage = 2},
+	}
+
 	language.Add("tool.smartweld.name", "Weld - Smart")
 	language.Add("tool.smartweld.desc", "Automatically welds selected props")
-	language.Add("tool.smartweld.0", "Left-click to select/deselect props. Use key and left click to auto-select.")
-	language.Add("tool.smartweld.1", "Right-click to weld selected props. Reload key to unselect all. Hold Use and right-click to weld everything to the prop you\'re looking at.")
+
+	language.Add("tool.smartweld.left", "Select or deselect a prop")
+	language.Add("tool.smartweld.leftuse", "Auto-Selects the props in a set radius")
+	language.Add("tool.smartweld.right", "Welds the selected props")
+	language.Add("tool.smartweld.rightuse", "Welds all the props to the one you\'re looking at")
+	language.Add("tool.smartweld.reload", "Clears the current selection")
+	
+
 	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
 	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected")
 	language.Add("tool.smartweld.strength", "Force Limit:")
@@ -222,7 +236,7 @@ end
 function TOOL:SelectProp(entity, hitBoneNum)
 	if self:IsAllowedEnt(entity) then
 		if #self.SelectedProps == 0 then
-			self:SetStage(1)
+			self:SetStage(2)
 		end
 
 		local boneNum = entity:IsRagdoll() and hitBoneNum or 0
@@ -243,7 +257,7 @@ end
 
 -- Pretty much deselects all
 function TOOL:Reload()
-	if IsFirstTimePredicted() and self.SelectedProps then
+	if IsFirstTimePredicted() and self.SelectedProps and #self.SelectedProps > 0 then
 		self:SetStage(1)
 
 		if CLIENT or game.SinglePlayer() then
