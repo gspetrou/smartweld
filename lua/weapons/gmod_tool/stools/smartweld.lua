@@ -5,25 +5,19 @@ Originally by Duncan Stead (Dunk)				- Dont contact for support
 ]]
 
 TOOL.AllowedClasses = {
-	prop_physics				= true,
-	prop_ragdoll				= true,
-	prop_vehicle				= true,
-	prop_vehicle_jeep			= true,
-	prop_vehicle_airboat		= true,
-	prop_vehicle_apc			= true,
-	prop_vehicle_crane			= true,
+	prop_physics 				= true,
+	prop_ragdoll 				= true,
+	prop_vehicle 				= true,
+	prop_vehicle_jeep 			= true,
+	prop_vehicle_airboat 		= true,
+	prop_vehicle_apc 			= true,
+	prop_vehicle_crane 			= true,
 	prop_vehicle_prisoner_pod	= true
 }
 
 TOOL.AllowedBaseClasses = {
-	base_entity					= true,
-	base_edit					= true,
-	base_anim					= true,
-	base_gmodentity				= true,
-	base_wire_entity			= true,
-	wac_hc_base					= true,
-	wac_pl_base					= true,
-	wac_pod_base				= true,
+	base_gmodentity 			= true,
+	base_wire_entity 			= true,
 	sent_sakarias_scar_base		= true
 }
 
@@ -42,6 +36,15 @@ TOOL.ClientConVar["color_g"] 		= 255
 TOOL.ClientConVar["color_b"] 		= 0
 TOOL.ClientConVar["color_a"] 		= 255
 TOOL.SelectedProps = {}
+
+-- These don't exist on the server in singleplayer and we need them there
+if game.SinglePlayer() then
+	NOTIFY_GENERIC = 0
+	NOTIFY_ERROR = 1
+	NOTIFY_UNDO = 2
+	NOTIFY_HINT = 3
+	NOTIFY_CLEANUP = 4
+end
 
 if CLIENT then
 	language.Add("tool.smartweld.name", "Weld - Smart")
@@ -130,9 +133,6 @@ function TOOL.BuildCPanel(panel)
 		Blue = "smartweld_color_b",
 		Alpha = "smartweld_color_a"
 	})
-end
- 
-function TOOL:Deploy()
 end
 
 -- Clears selected props when you die or holster the tool
@@ -301,7 +301,7 @@ function TOOL:PreWeld()
 end
 
 -- Decides what kind of weld to perform and then does it
-function TOOL:PerformWeld()
+function TOOL:PerformWeld(tr)
 	local weldToWorld = self:GetClientNumber("world")
 	local nocollide = tobool(self:GetClientNumber("nocollide"))
 	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
@@ -441,7 +441,7 @@ function TOOL:Notify(text, notifyType)
 			notification.AddLegacy(text, notifyType, 5)
 			surface.PlaySound("buttons/button15.wav")
 		elseif game.SinglePlayer() then
-			self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", NOTIFY_GENERIC, 5)")	-- Because singleplayer is doodoo
+			self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", "..tostring(notifyType)..", 5)")	-- Because singleplayer is doodoo
 			self:GetOwner():SendLua("surface.PlaySound(\"buttons/button15.wav\")")
 		end
 	end
