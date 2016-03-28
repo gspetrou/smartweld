@@ -21,8 +21,6 @@ TOOL.AllowedBaseClasses = {
 	sent_sakarias_scar_base		= true
 }
 
-TOOL.MaxWeldsPerProp = 10 -- Only for when you weld more than 127 props at once
-
 TOOL.Category 						= "Constraints"
 TOOL.Name 							= "Weld - Smart"
 TOOL.ClientConVar["selectradius"] 	= 100
@@ -31,6 +29,7 @@ TOOL.ClientConVar["freeze"] 		= 0
 TOOL.ClientConVar["clearwelds"]		= 1
 TOOL.ClientConVar["strength"] 		= 0
 TOOL.ClientConVar["world"] 			= 0
+TOOL.ClientConVar["maxweldsperprop"]= 10 -- Only for when you weld more than 127 props at once
 TOOL.ClientConVar["color_r"] 		= 0
 TOOL.ClientConVar["color_g"] 		= 255
 TOOL.ClientConVar["color_b"] 		= 0
@@ -67,6 +66,8 @@ if CLIENT then
 
 	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
 	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected")
+	language.Add("tool.smartweld.maxweldsperprop", "Max welds per prop")
+	language.Add("tool.smartweld.maxweldsperprop.help", "The maximum welds per prop. This only works if you are welding more than 127 props at once.")
 	language.Add("tool.smartweld.strength", "Force Limit:")
 	language.Add("tool.smartweld.strength.help", "The strength of the welds created. Use 0 for unbreakable welds")
 	language.Add("tool.smartweld.world", "Weld everything to world")
@@ -108,6 +109,16 @@ function TOOL.BuildCPanel(panel)
 		Min = "0",
 		Max = "10000",
 		Command = "smartweld_strength"
+	})
+
+	-- Max Welds Per Prop
+	panel:AddControl("Slider", {
+		Label = "#tool.smartweld.maxweldsperprop",
+		Help = "#tool.smartweld.maxweldsperprop",
+		Type = "Integer",
+		Min = "0",
+		Max = "10",
+		Command = "smartweld_maxweldsperprop"
 	})
 
 	-- Weld to each other or all to world
@@ -316,7 +327,7 @@ end
 
 -- Decides what kind of weld to perform and then does it
 function TOOL:PerformWeld(tr)
-	local weldToWorld = self:GetClientNumber("world")
+	local weldToWorld = tobool(self:GetClientNumber("world"))
 	local nocollide = tobool(self:GetClientNumber("nocollide"))
 	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
 
@@ -348,10 +359,11 @@ function TOOL:PerformWeld(tr)
 		end
 
 		for k, v in ipairs(self.SelectedProps) do
-			for x = 1, self.MaxWeldsPerProp do
+			for x = 1, maxweldsperprop do
 				local closestdistance = 99999999
 				local closestprop = -1
 
+				-- Find the X closest props. X is defined by maxweldsperprop.
 				for d, j in ipairs(self.SelectedProps) do
 					if k ~= d then
 						local linked = false
