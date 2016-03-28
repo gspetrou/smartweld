@@ -36,7 +36,7 @@ TOOL.ClientConVar["color_b"] 		= 0
 TOOL.ClientConVar["color_a"] 		= 255
 TOOL.SelectedProps = {}
 
--- These don't exist on the server in singleplayer and we need them there
+-- These don't exist on the server in singleplayer but we need them there.
 if game.SinglePlayer() then
 	NOTIFY_GENERIC = 0
 	NOTIFY_ERROR = 1
@@ -44,6 +44,8 @@ if game.SinglePlayer() then
 	NOTIFY_HINT = 3
 	NOTIFY_CLEANUP = 4
 end
+
+cleanup.Register("smartweld")
 
 if CLIENT then
 	TOOL.Information = {
@@ -63,24 +65,25 @@ if CLIENT then
 	language.Add("tool.smartweld.rightuse", "Welds all the props to the one you\'re looking at")
 	language.Add("tool.smartweld.reload", "Clears the current selection")
 	
-
 	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
-	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected")
+	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected.")
 	language.Add("tool.smartweld.maxweldsperprop", "Max welds per prop")
 	language.Add("tool.smartweld.maxweldsperprop.help", "The maximum welds per prop. This only works if you are welding more than 127 props at once.")
 	language.Add("tool.smartweld.strength", "Force Limit:")
-	language.Add("tool.smartweld.strength.help", "The strength of the welds created. Use 0 for unbreakable welds")
+	language.Add("tool.smartweld.strength.help", "The strength of the welds created. Use 0 for unbreakable welds.")
 	language.Add("tool.smartweld.world", "Weld everything to world")
-	language.Add("tool.smartweld.world.help", "Turning this on will weld everything to the world. Useful for making something totally immovable")
+	language.Add("tool.smartweld.world.help", "Turning this on will weld everything to the world. Useful for making something totally immovable.")
 	language.Add("tool.smartweld.nocollide", "No-collide")
-	language.Add("tool.smartweld.nocollide.help", "Whether all props should no-collide each other when welded")
+	language.Add("tool.smartweld.nocollide.help", "Whether all props should no-collide each other when welded.")
 	language.Add("tool.smartweld.freeze", "Auto-freeze")
-	language.Add("tool.smartweld.freeze.help", "Whether all selected props should be frozen after the weld")
+	language.Add("tool.smartweld.freeze.help", "Whether all selected props should be frozen after the weld.")
 	language.Add("tool.smartweld.clearwelds", "Remove old welds")
-	language.Add("tool.smartweld.clearwelds.help", "If a selected prop has any welds already on it this will remove them first")
+	language.Add("tool.smartweld.clearwelds.help", "If a selected prop has any welds already on it this will remove them first.")
 	language.Add("tool.smartweld.color", "Selection color")
-	language.Add("tool.smartweld.color.help", "Modify the selection color, it\'s useful for grouping")
+	language.Add("tool.smartweld.color.help", "Modify the selection color, it\'s useful for grouping.")
 	language.Add("Undone_smartweld", "Undone Smart-Weld")
+	language.Add("Cleanup_smartweld", "Smart Welds")
+	language.Add("Cleaned_smartweld", "Smart-Welds Cleared")
 end
 
 function TOOL.BuildCPanel(panel)
@@ -160,7 +163,7 @@ function TOOL.BuildCPanel(panel)
 	})
 end
 
--- Clears selected props when you die or holster the tool
+-- Clears selected props when you die or holster the tool.
 function TOOL:Holster()
 	if CLIENT or game.SinglePlayer() then
 		for k, v in ipairs(self.SelectedProps) do
@@ -173,7 +176,7 @@ function TOOL:Holster()
 	self:SetStage(1)
 end
 
--- Does some validity checks then either selects or deselects the prop
+-- Does some validity checks then either selects or deselects the prop.
 function TOOL:LeftClick(tr)
 	if IsFirstTimePredicted() and IsValid(tr.Entity) and not tr.Entity:IsPlayer() then
 		if SERVER and not util.IsValidPhysicsObject(tr.Entity, tr.PhysicsBone) then
@@ -211,7 +214,7 @@ function TOOL:AutoSelect(ent)
 	self:Notify((#self.SelectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
 end
 
--- Decides if we should select or deselect the specified entity
+-- Decides if we should select or deselect the specified entity.
 function TOOL:HandleProp(tr)
 	if #self.SelectedProps == 0 then
 		self:SelectProp(tr.Entity, tr.PhysicsBone)
@@ -229,7 +232,7 @@ function TOOL:HandleProp(tr)
 	return true
 end
 
--- Deselects the chosen prop
+-- Deselects the chosen prop.
 function TOOL:DeselectProp(ent)
 	for k, v in ipairs(self.SelectedProps) do
 		if v.ent == ent then
@@ -243,7 +246,7 @@ function TOOL:DeselectProp(ent)
 	return true
 end
 
--- Adds prop to props table and sets its color
+-- Adds prop to props table and sets its color.
 function TOOL:SelectProp(entity, hitBoneNum)
 	if self:IsAllowedEnt(entity) then
 		if #self.SelectedProps == 0 then
@@ -303,7 +306,7 @@ function TOOL:RightClick(tr)
 	return false
 end
 
--- Does stuff that should happen before welding such as clearing old welds or freezing all the props
+-- Does stuff that should happen before welding such as clearing old welds or freezing all the props.
 function TOOL:PreWeld()
 	local freezeProps = self:GetClientNumber("freeze")
 	local removeOldWelds = self:GetClientNumber("clearwelds")
@@ -325,21 +328,24 @@ function TOOL:PreWeld()
 	end
 end
 
--- Decides what kind of weld to perform and then does it
+-- Decides what kind of weld to perform and then does it.
 function TOOL:PerformWeld(tr)
 	local weldToWorld = tobool(self:GetClientNumber("world"))
 	local nocollide = tobool(self:GetClientNumber("nocollide"))
 	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
+	local ply = self:GetOwner()
 
-	if (weldToWorld == 1) then
+	if (weldToWorld) then
 		for k, v in ipairs(self.SelectedProps) do
 			local weld = constraint.Weld(v.ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
 			undo.AddEntity(weld)
+			ply:AddCleanup("smartweld", weld)
 		end
-	elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
+	elseif (self:GetOwner():KeyDown(IN_USE)) then 	-- Weld all to one
 		for k, v in ipairs(self.SelectedProps) do
 			local weld = constraint.Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
 			undo.AddEntity(weld)
+			ply:AddCleanup("smartweld", weld)
 		end
 	elseif (#self.SelectedProps < 128) then
 		for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
@@ -348,13 +354,15 @@ function TOOL:PerformWeld(tr)
 					if not IsValid(v.ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
 					local weld = constraint.Weld(v.ent, self.SelectedProps[otherProps].ent, v.bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
 					undo.AddEntity(weld)
+					ply:AddCleanup("smartweld", weld)
 				end
 			end
 		end
-	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props
+	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props.
+		local maxweldsperprop = self:GetClientNumber("maxweldsperprop")
 		local welds = {}
 		local weldcount = 0
-		for k,v in ipairs(self.SelectedProps) do
+		for k, v in ipairs(self.SelectedProps) do
 			welds[k] = {}
 		end
 
@@ -386,8 +394,9 @@ function TOOL:PerformWeld(tr)
 					end
 				end
 
+				-- Take the closest props and weld them to the current prop.
 				if closestprop ~= -1 then
-					-- Weld to this prop and add to weld list
+					-- Weld to this prop and add to weld list.
 					local weld = constraint.Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
 					undo.AddEntity(weld)
 
@@ -429,7 +438,7 @@ function TOOL:FinishWelding(entity)
 	self:SetStage(1)
 end
 
--- Checks if a prop has already been selected
+-- Checks if a prop has already been selected.
 function TOOL:PropHasBeenSelected(ent)
 	for k, v in ipairs(self.SelectedProps) do
 		if (ent == v.ent) then
@@ -440,7 +449,7 @@ function TOOL:PropHasBeenSelected(ent)
 	return false
 end
 
--- Decides if we want to weld the entity or not
+-- Decides if we want to weld the entity or not.
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
 		local ply = SERVER and self:GetOwner() or self.Owner
@@ -457,14 +466,14 @@ function TOOL:IsAllowedEnt(ent)
 	return false
 end
 
--- Puts one of those annoying notifications to the lower right of the screen
+-- Puts one of those annoying notifications to the lower right of the screen.
 function TOOL:Notify(text, notifyType)
 	if IsFirstTimePredicted() then
 		if CLIENT and IsValid(self.Owner) then
 			notification.AddLegacy(text, notifyType, 5)
 			surface.PlaySound("buttons/button15.wav")
 		elseif game.SinglePlayer() then
-			self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", "..tostring(notifyType)..", 5)")	-- Because singleplayer is doodoo
+			self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", "..tostring(notifyType)..", 5)")	-- Because singleplayer is doodoo.
 			self:GetOwner():SendLua("surface.PlaySound(\"buttons/button15.wav\")")
 		end
 	end
