@@ -414,12 +414,9 @@ function TOOL:FinishWelding(entity)
 			end
 		end
 
-		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count
-			for k, v in ipairs(self.SelectedProps) do
-				if (v.ent == entity) then
-					numProps = numProps + 1
-					break
-				end
+		if self:GetOwner():KeyDown(IN_USE) then	-- If they chose to weld all to one prop this will correct the count.
+			if not self:PropHasBeenSelected(entity) then
+				numProps = numProps + 1
 			end
 			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
 		elseif tobool(self:GetClientNumber("world")) then
