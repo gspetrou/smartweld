@@ -163,6 +163,9 @@ function TOOL.BuildCPanel(panel)
 	})
 end
 
+local ipairs = ipairs
+local IsValid = IsValid
+
 -- Clears selected props when you die or holster the tool.
 function TOOL:Holster()
 	if CLIENT or game.SinglePlayer() then
@@ -174,6 +177,14 @@ function TOOL:Holster()
 	end
 	self.SelectedProps = {}
 	self:SetStage(1)
+end
+
+-- Pretty much deselects all
+function TOOL:Reload()
+	if IsFirstTimePredicted() and self.SelectedProps and #self.SelectedProps > 0 then
+		self:Holster()
+		self:Notify("Prop Selection Cleared", NOTIFY_CLEANUP)
+	end
 end
 
 -- Does some validity checks then either selects or deselects the prop.
@@ -269,22 +280,6 @@ function TOOL:SelectProp(entity, hitBoneNum)
 	return false
 end
 
--- Pretty much deselects all
-function TOOL:Reload()
-	if IsFirstTimePredicted() and self.SelectedProps and #self.SelectedProps > 0 then
-		self:SetStage(1)
-
-		if CLIENT or game.SinglePlayer() then
-			for k, v in ipairs(self.SelectedProps) do
-				v.ent:SetColor(v.col)
-			end
-		end
-		
-		self.SelectedProps = {}
-		self:Notify("Prop Selection Cleared", NOTIFY_CLEANUP)
-	end
-end
-
 -- Handles the welding
 function TOOL:RightClick(tr)
 	if (#self.SelectedProps <= 1) then
@@ -348,14 +343,16 @@ function TOOL:PerformWeld(tr)
 			ply:AddCleanup("smartweld", weld)
 		end
 	elseif (#self.SelectedProps < 128) then
-		for k, v in ipairs(self.SelectedProps) do	-- Normal Weld
-			for otherProps = 1, #self.SelectedProps do
-				if (i ~= otherProps) and (i ~= #self.SelectedProps) then
-					if not IsValid(v.ent) or not IsValid(self.SelectedProps[otherProps].ent) then continue end
-					local weld = constraint.Weld(v.ent, self.SelectedProps[otherProps].ent, v.bone, self.SelectedProps[otherProps].bone, weldForceLimit, nocollide, false)
-					undo.AddEntity(weld)
-					ply:AddCleanup("smartweld", weld)
-				end
+		for i = 1, #self.SelectedProps do
+			local firstprop = self.SelectedProps[i]
+
+			for k = i+1, #self.SelectedProps do
+				local secondprop = self.SelectedProps[k]
+				if not IsValid(firstprop.ent) or not IsValid(secondprop.ent) then continue end
+
+				local weld = constraint.Weld(firstprop.ent, secondprop.ent, firstprop.bone, secondprop.bone, weldForceLimit, nocollide, false)
+				undo.AddEntity(weld)
+				ply:AddCleanup("smartweld", weld)
 			end
 		end
 	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props.
