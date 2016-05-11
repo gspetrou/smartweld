@@ -222,7 +222,7 @@ function TOOL:AutoSelect(ent)
 		end
 	end
 
-	self:Notify((#self.SelectedProps-preAutoSelect).." prop(s) have been auto-selected.", NOTIFY_GENERIC)
+	self:Notify(#self.SelectedProps-preAutoSelect .." prop(s) have been auto-selected.", NOTIFY_GENERIC)
 end
 
 -- Decides if we should select or deselect the specified entity.
@@ -282,7 +282,7 @@ end
 
 -- Handles the welding
 function TOOL:RightClick(tr)
-	if (#self.SelectedProps <= 1) then
+	if #self.SelectedProps <= 1 then
 		self:Notify((#self.SelectedProps == 1 and "Select at least one more prop to weld." or "No props selected!"), NOTIFY_GENERIC)
 		return false
 	end
@@ -307,12 +307,12 @@ function TOOL:PreWeld()
 	local removeOldWelds = self:GetClientNumber("clearwelds")
 
 	for k, v in ipairs(self.SelectedProps) do
-		if (removeOldWelds == 1) then
-			constraint.RemoveConstraints(v.ent, "Weld") 
-		end
+		if IsValid(v.ent) then
+			if removeOldWelds == 1 then
+				constraint.RemoveConstraints(v.ent, "Weld") 
+			end
 
-		if (freezeProps == 1) then
-			if IsValid(v.ent) then
+			if freezeProps == 1 then
 				local physobj = v.ent:GetPhysicsObject()
 				if IsValid(physobj) then
 					physobj:EnableMotion(false)
@@ -330,19 +330,25 @@ function TOOL:PerformWeld(tr)
 	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
 	local ply = self:GetOwner()
 
-	if (weldToWorld) then
+	-- Micro Optimizations!
+	local Weld = constraint.Weld
+	local AddEntity = undo.AddEntity
+
+	if weldToWorld then
+		local world = game.GetWorld()
+		
 		for k, v in ipairs(self.SelectedProps) do
-			local weld = constraint.Weld(v.ent, game.GetWorld(), 0, 0, weldForceLimit, nocollide, false)
-			undo.AddEntity(weld)
+			local weld = Weld(v.ent, world, 0, 0, weldForceLimit, nocollide, false)
+			AddEntity(weld)
 			ply:AddCleanup("smartweld", weld)
 		end
-	elseif (self:GetOwner():KeyDown(IN_USE)) then 	-- Weld all to one
+	elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
 		for k, v in ipairs(self.SelectedProps) do
-			local weld = constraint.Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
-			undo.AddEntity(weld)
+			local weld = Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
+			AddEntity(weld)
 			ply:AddCleanup("smartweld", weld)
 		end
-	elseif (#self.SelectedProps < 128) then
+	elseif #self.SelectedProps < 128 then
 		for i = 1, #self.SelectedProps do
 			local firstprop = self.SelectedProps[i]
 
@@ -350,12 +356,13 @@ function TOOL:PerformWeld(tr)
 				local secondprop = self.SelectedProps[k]
 				if not IsValid(firstprop.ent) or not IsValid(secondprop.ent) then continue end
 
-				local weld = constraint.Weld(firstprop.ent, secondprop.ent, firstprop.bone, secondprop.bone, weldForceLimit, nocollide, false)
-				undo.AddEntity(weld)
+				local weld = Weld(firstprop.ent, secondprop.ent, firstprop.bone, secondprop.bone, weldForceLimit, nocollide, false)
+				AddEntity(weld)
 				ply:AddCleanup("smartweld", weld)
 			end
 		end
 	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props.
+		local insert = table.insert
 		local maxweldsperprop = self:GetClientNumber("maxweldsperprop")
 		local welds = {}
 		local weldcount = 0
@@ -373,7 +380,7 @@ function TOOL:PerformWeld(tr)
 					if k ~= d then
 						local linked = false
 
-						for k, val in ipairs(welds[k]) do
+						for q, val in ipairs(welds[q]) do
 							if val == d then
 								linked = true
 								break
@@ -394,18 +401,17 @@ function TOOL:PerformWeld(tr)
 				-- Take the closest props and weld them to the current prop.
 				if closestprop ~= -1 then
 					-- Weld to this prop and add to weld list.
-					local weld = constraint.Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
-					undo.AddEntity(weld)
+					local weld = Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
+					AddEntity(weld)
 
 					weldcount = weldcount + 1
-					table.insert(welds[k], closestprop)
-					table.insert(welds[closestprop], k)
+					insert(welds[k], closestprop)
+					insert(welds[closestprop], k)
 				else
 					break
 				end
 			end
-		end
-		
+		end	
 	end
 end
 
@@ -424,11 +430,11 @@ function TOOL:FinishWelding(entity)
 			if not self:PropHasBeenSelected(entity) then
 				numProps = numProps + 1
 			end
-			self:Notify("Weld complete! "..numProps.." props have been welded to a single prop.", NOTIFY_GENERIC)
+			self:Notify("Weld complete! ".. numProps .." props have been welded to a single prop.", NOTIFY_GENERIC)
 		elseif tobool(self:GetClientNumber("world")) then
-			self:Notify("Weld complete! "..numProps.." props have been welded to the world.", NOTIFY_GENERIC)
+			self:Notify("Weld complete! ".. numProps .." props have been welded to the world.", NOTIFY_GENERIC)
 		else
-			self:Notify("Weld complete! "..numProps.." props have been welded to each other.", NOTIFY_GENERIC)
+			self:Notify("Weld complete! ".. numProps .." props have been welded to each other.", NOTIFY_GENERIC)
 		end
 	end
 	self.SelectedProps = {}
@@ -438,7 +444,7 @@ end
 -- Checks if a prop has already been selected.
 function TOOL:PropHasBeenSelected(ent)
 	for k, v in ipairs(self.SelectedProps) do
-		if (ent == v.ent) then
+		if ent == v.ent then
 			return true
 		end
 	end
@@ -446,14 +452,17 @@ function TOOL:PropHasBeenSelected(ent)
 	return false
 end
 
+local GetBaseclass = baseclass.Get
+
 -- Decides if we want to weld the entity or not.
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
 		local ply = SERVER and self:GetOwner() or self.Owner
+		local class = ent:GetClass()
 		local tr = ply:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not hook.Run("CanTool", ply, tr, "smartweld")) or ((not self.AllowedBaseClasses[baseclass.Get(ent:GetClass()).Base]) and (not self.AllowedClasses[ent:GetClass()])) then
+		if (not hook.Run("CanTool", ply, tr, "smartweld")) or ((not self.AllowedBaseClasses[GetBaseclass(class).Base]) and (not self.AllowedClasses[class])) then
 			return false
 		end
 
@@ -470,7 +479,7 @@ function TOOL:Notify(text, notifyType)
 			notification.AddLegacy(text, notifyType, 5)
 			surface.PlaySound("buttons/button15.wav")
 		elseif game.SinglePlayer() then
-			self:GetOwner():SendLua("GAMEMODE:AddNotify(\""..text.."\", "..tostring(notifyType)..", 5)")	-- Because singleplayer is doodoo.
+			self:GetOwner():SendLua("GAMEMODE:AddNotify(\"".. text .."\", ".. tostring(notifyType) ..", 5)")	-- Because singleplayer is doodoo.
 			self:GetOwner():SendLua("surface.PlaySound(\"buttons/button15.wav\")")
 		end
 	end
