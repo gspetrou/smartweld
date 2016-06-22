@@ -73,7 +73,7 @@ if CLIENT then
 	language.Add("tool.smartweld.selectoutsideradius", "Auto-Select Radius:")
 	language.Add("tool.smartweld.selectoutsideradius.help", "The auto-select radius, anything beyond this value wont be selected.")
 	language.Add("tool.smartweld.maxweldsperprop", "Max welds per prop")
-	language.Add("tool.smartweld.maxweldsperprop.help", "The maximum welds per prop. This only works if you are welding more than 127 props at once.")
+	language.Add("tool.smartweld.maxweldsperprop.help", "The maximum welds per prop. This only works if you are welding more than 127 props at once. Higher than 10 not recommended, 15 maximum.")
 	language.Add("tool.smartweld.strength", "Force Limit:")
 	language.Add("tool.smartweld.strength.help", "The strength of the welds created. Use 0 for unbreakable welds.")
 	language.Add("tool.smartweld.world", "Weld everything to world")
@@ -124,7 +124,7 @@ function TOOL.BuildCPanel(panel)
 		Label = "#tool.smartweld.maxweldsperprop",
 		Help = "#tool.smartweld.maxweldsperprop",
 		Type = "Integer",
-		Min = "0",
+		Min = "1",
 		Max = "10",
 		Command = "smartweld_maxweldsperprop"
 	})
@@ -168,8 +168,12 @@ function TOOL.BuildCPanel(panel)
 	})
 end
 
+-- Micro Optimizations!
 local ipairs = ipairs
 local IsValid = IsValid
+local Weld = constraint.Weld
+local AddEntity = undo.AddEntity
+local Cleanup = cleanup.Add
 
 -- Clears selected props when you die or holster the tool.
 function TOOL:Holster()
@@ -335,23 +339,23 @@ function TOOL:PerformWeld(tr)
 	local weldForceLimit = math.floor(self:GetClientNumber("strength"))
 	local ply = self:GetOwner()
 
-	-- Micro Optimizations!
-	local Weld = constraint.Weld
-	local AddEntity = undo.AddEntity
+	if #self.SelectedProps < 2 then
+		return
+	end
 
 	if weldToWorld then
 		local world = game.GetWorld()
 		
-		for k, v in ipairs(self.SelectedProps) do
+		for _, v in ipairs(self.SelectedProps) do
 			local weld = Weld(v.ent, world, 0, 0, weldForceLimit, nocollide, false)
 			AddEntity(weld)
-			ply:AddCleanup("smartweld", weld)
+			Cleanup(ply, "smartweld", weld)
 		end
 	elseif self:GetOwner():KeyDown(IN_USE) then 	-- Weld all to one
-		for k, v in ipairs(self.SelectedProps) do
+		for _, v in ipairs(self.SelectedProps) do
 			local weld = Weld(v.ent, tr.Entity, v.bone, tr.PhysicsBone, weldForceLimit, nocollide, false)
 			AddEntity(weld)
-			ply:AddCleanup("smartweld", weld)
+			Cleanup(ply, "smartweld", weld)
 		end
 	elseif #self.SelectedProps < 128 then
 		for i = 1, #self.SelectedProps do
@@ -359,64 +363,53 @@ function TOOL:PerformWeld(tr)
 
 			for k = i+1, #self.SelectedProps do
 				local secondprop = self.SelectedProps[k]
-				if not IsValid(firstprop.ent) or not IsValid(secondprop.ent) then continue end
 
-				local weld = Weld(firstprop.ent, secondprop.ent, firstprop.bone, secondprop.bone, weldForceLimit, nocollide, false)
-				AddEntity(weld)
-				ply:AddCleanup("smartweld", weld)
+				if IsValid(firstprop.ent) and IsValid(secondprop.ent) then
+					local weld = Weld(firstprop.ent, secondprop.ent, firstprop.bone, secondprop.bone, weldForceLimit, nocollide, false)
+					AddEntity(weld)
+					Cleanup(ply, "smartweld", weld)
+				end
 			end
 		end
 	else	-- There is a source engine limit with welding more than 127 props so we have to work around it by welding to the closest props.
-		local insert = table.insert
-		local maxweldsperprop = self:GetClientNumber("maxweldsperprop")
-		local welds = {}
-		local weldcount = 0
-		for k, v in ipairs(self.SelectedProps) do
-			welds[k] = {}
+		local function AreLinked(prop_one, prop_two)
+			return self.SelectedProps[prop_two][prop_one] == true or self.SelectedProps[prop_one][prop_two] == true
 		end
 
-		for k, v in ipairs(self.SelectedProps) do
-			for x = 1, maxweldsperprop do
-				local closestdistance = 99999999
-				local closestprop = -1
+		local function LinkProps(id_one, prop_one, id_two)
+			local weld = Weld(prop_one.ent, self.SelectedProps[id_two].ent, 0, 0, weldForceLimit, nocollide, false)
+			AddEntity(weld)
+			Cleanup(ply, "smartweld", weld)
 
-				-- Find the X closest props. X is defined by maxweldsperprop.
-				for d, j in ipairs(self.SelectedProps) do
-					if k ~= d then
-						local linked = false
+			-- This kinda makes a mess in the SelectedProps table but we clear it right after this function anyways.
+			self.SelectedProps[id_one][id_two] = true
+			self.SelectedProps[id_two][id_one] = true
+		end
 
-						for q, val in ipairs(welds[q]) do
-							if val == d then
-								linked = true
-								break
-							end
-						end
+		local maxweldsperprop = math.min(self:GetClientNumber("maxweldsperprop"), 15)
 
-						if not linked then
-							local distance = (v.ent:GetPos() - j.ent:GetPos()):Length()
+		for i, v in ipairs(self.SelectedProps) do
+			self.SelectedProps[i][i] = true
 
-							if distance < closestdistance then
-								closestdistance = distance
-								closestprop = d
-							end
+			for _ = 1, maxweldsperprop do
+				local closestdistance = math.huge
+				local closestprop_id = -1
+
+				for j, d in ipairs(self.SelectedProps) do
+					if not AreLinked(i, j) then
+						local distance = (v.ent:GetPos() - d.ent:GetPos()):LengthSqr()
+						if distance < closestdistance then
+							closestdistance = distance
+							closestprop_id = j
 						end
 					end
 				end
 
-				-- Take the closest props and weld them to the current prop.
-				if closestprop ~= -1 then
-					-- Weld to this prop and add to weld list.
-					local weld = Weld(v.ent, self.SelectedProps[closestprop].ent, 0, 0, weldForceLimit, nocollide, false)
-					AddEntity(weld)
-
-					weldcount = weldcount + 1
-					insert(welds[k], closestprop)
-					insert(welds[closestprop], k)
-				else
-					break
+				if closestprop_id ~= -1 then
+					LinkProps(i, v, closestprop_id)
 				end
 			end
-		end	
+		end
 	end
 end
 
@@ -457,8 +450,6 @@ function TOOL:PropHasBeenSelected(ent)
 	return false
 end
 
-local GetBaseclass = baseclass.Get
-
 -- Decides if we want to weld the entity or not.
 function TOOL:IsAllowedEnt(ent)
 	if IsValid(ent) then
@@ -467,7 +458,7 @@ function TOOL:IsAllowedEnt(ent)
 		local tr = ply:GetEyeTrace()
 		tr.Entity = ent
 
-		if (not hook.Run("CanTool", ply, tr, "smartweld")) or ((not self.AllowedBaseClasses[GetBaseclass(class).Base]) and (not self.AllowedClasses[class])) then
+		if (not hook.Run("CanTool", ply, tr, "smartweld")) or ((not self.AllowedBaseClasses[ent.Base]) and (not self.AllowedClasses[class])) then
 			return false
 		end
 
