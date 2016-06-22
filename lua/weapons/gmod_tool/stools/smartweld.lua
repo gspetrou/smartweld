@@ -6,7 +6,9 @@ Originally by Duncan Stead (Dunk)				- Dont contact for support
 
 TOOL.AllowedClasses = {
 	prop_physics 				= true,
+	prop_physics_multiplayer	= true,
 	prop_ragdoll 				= true,
+	prop_effect 				= true,
 	prop_vehicle 				= true,
 	prop_vehicle_jeep 			= true,
 	prop_vehicle_airboat 		= true,
@@ -16,9 +18,12 @@ TOOL.AllowedClasses = {
 }
 
 TOOL.AllowedBaseClasses = {
+	base_anim 					= true,
+	base_entity 				= true,
 	base_gmodentity 			= true,
-	base_wire_entity 			= true,
-	sent_sakarias_scar_base		= true
+	base_wire_entity 			= true,	-- Wiremod
+	sent_sakarias_scar_base		= true,	-- SCars
+	base_rd3_entity				= true	-- Spacebuild
 }
 
 TOOL.Category 						= "Constraints"
